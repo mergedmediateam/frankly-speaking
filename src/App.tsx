@@ -79,14 +79,6 @@ const SERIES_GROUPS = (() => {
     }))
 })()
 
-const SERIES_NAMES = new Set(SERIES_GROUPS.map((s) => s.name))
-
-// Standalone daily dispatches: anything not part of a multi-part series, newest-first
-const DISPATCHES_LIST = VIDEOS.filter((v) => {
-  const n = seriesNameOf(v.title)
-  return !n || !SERIES_NAMES.has(n)
-})
-
 function useHashRoute() {
   const [hash, setHash] = useState(() => window.location.hash)
   useEffect(() => {
@@ -447,12 +439,12 @@ function DispatchesPage() {
     <main className="min-h-[calc(100svh-104px)]">
       <div className="mx-auto max-w-[1400px] px-6 pt-14 pb-24">
         <PageHeader
-          kicker={`${DISPATCHES_LIST.length} episodes`}
+          kicker={`${VIDEOS.length} episodes`}
           title="Dispatches"
-          sub="Every daily Global Dispatch — current events and prophecy read through the Kingdom lens, newest first."
+          sub="Every broadcast — current events and prophecy read through the Kingdom lens, newest first."
         />
         <div data-grid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
-          {DISPATCHES_LIST.map((v) => (
+          {VIDEOS.map((v) => (
             <VideoTile key={v.id} v={v} />
           ))}
         </div>
