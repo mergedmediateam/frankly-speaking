@@ -1,0 +1,197 @@
+@import url('https://api.fontshare.com/v2/css?f[]=zodiak@400,500,700,1&f[]=switzer@400,500,600,700&f[]=space-mono@400,700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: 'Zodiak', Georgia, 'Times New Roman', serif;
+  --font-body: 'Switzer', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+
+  --color-ink: #070a11;
+  --color-ink-soft: #0d1421;
+  --color-bone: #eef2f8;
+  --color-paper: #fbfaf6;
+  --color-blue: #1f6fe5;
+  --color-blue-bright: #3b8bff;
+  --color-blue-deep: #0c3f96;
+  --color-silver: #cfd9e8;
+  --color-slate: #6b7689;
+  --color-line: #1b2740;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) var(--color-ink);
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: var(--color-bone);
+  font-family: var(--font-body);
+  font-feature-settings: "ss01", "cv01";
+  overflow-x: hidden;
+}
+
+/* Editorial film grain overlay */
+.grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Ticker marquee */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee 38s linear infinite;
+  will-change: transform;
+}
+
+/* Live dot pulse */
+@keyframes livepulse {
+  0%   { box-shadow: 0 0 0 0 rgba(59,139,255,0.6); }
+  70%  { box-shadow: 0 0 0 7px rgba(59,139,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(59,139,255,0); }
+}
+.live-dot { animation: livepulse 1.8s ease-out infinite; }
+
+/* Logo lockup on dark bg: black background drops out via screen blend */
+.logo-screen { mix-blend-mode: screen; }
+
+/* ---- Hero logo motion-graphics idle loop ---- */
+.logo-loop {
+  position: relative;
+  display: inline-block;
+  animation: logoFloat 6.5s ease-in-out infinite;
+  will-change: transform;
+}
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-10px) scale(1.015); }
+}
+/* specular glint that sweeps across the metallic logo, masked to its shape */
+.logo-glint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.65) 50%,
+    transparent 58%
+  );
+  background-repeat: no-repeat;
+  background-size: 220% 100%;
+  background-position: 170% 0;
+  -webkit-mask: url('/brand/lockup.png') center / contain no-repeat;
+  mask: url('/brand/lockup.png') center / contain no-repeat;
+  mix-blend-mode: screen;
+  animation: logoGlint 6.5s ease-in-out infinite;
+}
+@keyframes logoGlint {
+  0%, 50%   { background-position: 170% 0; }
+  78%, 100% { background-position: -70% 0; }
+}
+
+/* ---- Hero background slow pan (motion-graphics loop) ---- */
+.hero-bg-anim {
+  animation: heroPan 32s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes heroPan {
+  from { transform: scale(1.08) translate3d(0, 0, 0); }
+  to   { transform: scale(1.2) translate3d(-2.5%, -1.5%, 0); }
+}
+.hero-glow-drift {
+  animation: glowDrift 14s ease-in-out infinite alternate;
+}
+@keyframes glowDrift {
+  from { opacity: 0.7; transform: translate(-50%, 0) scale(1); }
+  to   { opacity: 1;   transform: translate(-48%, 4%) scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-loop, .logo-glint, .hero-bg-anim, .hero-glow-drift { animation: none; }
+}
+
+/* Reveal initial state (GSAP animates from here) */
+[data-reveal] { opacity: 0; }
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* horizontal carousel — hide scrollbar */
+.no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* animated nav underline */
+.navlink { position: relative; }
+.navlink::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -5px;
+  height: 1.5px;
+  background: var(--color-blue-bright);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.navlink:hover::after,
+.navlink.is-active::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* pause the ticker when hovered */
+.marquee-wrap:hover .marquee-track { animation-play-state: paused; }
+
+/* scroll progress bar */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--color-blue), var(--color-blue-bright));
+  z-index: 70;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track { animation: none; }
+  .scroll-progress { display: none; }
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+::selection { background: var(--color-blue); color: #fff; }
