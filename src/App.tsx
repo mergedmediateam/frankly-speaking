@@ -335,7 +335,7 @@ function Home() {
             <div>
               <span className="kicker text-blue-bright">{playlist.count} episodes</span>
               <h2 className="mt-3 font-display text-3xl md:text-4xl tracking-tight">
-                Latest dispatches
+                Latest broadcasts
               </h2>
             </div>
             <a href="#/dispatches" className="hidden sm:inline kicker text-slate hover:text-bone transition-colors pb-2">
@@ -343,7 +343,7 @@ function Home() {
             </a>
           </div>
           <div data-reveal style={{ transform: 'translateY(28px)' }}>
-            <VideoRow videos={DISPATCHES_LIST.slice(0, 15)} />
+            <VideoRow videos={VIDEOS.slice(0, 15)} />
           </div>
         </div>
       </section>
