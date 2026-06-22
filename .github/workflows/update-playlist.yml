@@ -1,5 +1,6 @@
 name: Update playlist
 
+# Daily auto-refresh of the Frankly Speaking dispatches.
 # Refreshes src/data/videos.json from the Frankly Speaking YouTube playlist.
 # Runs daily; commits only when something changed; the push triggers Vercel's
 # auto-deploy (the repo is connected to the Vercel project).
