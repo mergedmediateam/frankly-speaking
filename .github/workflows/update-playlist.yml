@@ -7,8 +7,9 @@ name: Update playlist
 
 on:
   schedule:
-    # 09:00 UTC daily ≈ 5:00am ET / 4:00am CT — catches anything published the day before.
-    - cron: '0 9 * * *'
+    # Every 10 minutes — a new episode appears on the site within ~10 min of upload.
+    # (Free because the repo is public; GitHub Actions minutes are unlimited for public repos.)
+    - cron: '*/10 * * * *'
   workflow_dispatch: {} # allow manual "Run workflow" from the Actions tab
 
 permissions:
