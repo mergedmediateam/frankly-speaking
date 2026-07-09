@@ -16,6 +16,49 @@ const NAV = [
   { label: 'About', href: '#/about' },
 ]
 
+const SOCIALS = [
+  {
+    label: 'YouTube',
+    href: 'https://www.youtube.com/@Franklyspeakingshow',
+    // YouTube play button
+    path: 'M21.58 7.19a2.5 2.5 0 0 0-1.76-1.77C18.25 5 12 5 12 5s-6.25 0-7.82.42A2.5 2.5 0 0 0 2.42 7.19 26.2 26.2 0 0 0 2 12a26.2 26.2 0 0 0 .42 4.81 2.5 2.5 0 0 0 1.76 1.77C5.75 19 12 19 12 19s6.25 0 7.82-.42a2.5 2.5 0 0 0 1.76-1.77A26.2 26.2 0 0 0 22 12a26.2 26.2 0 0 0-.42-4.81ZM10 15.13V8.87L15.25 12 10 15.13Z',
+  },
+  {
+    label: 'Facebook',
+    href: 'https://www.facebook.com/people/Frankly-Speaking/61591621778787/',
+    // Facebook "f"
+    path: 'M13.5 21v-7.4h2.48l.37-2.88H13.5V8.88c0-.83.23-1.4 1.43-1.4h1.52V4.9c-.26-.03-1.17-.11-2.22-.11-2.2 0-3.7 1.34-3.7 3.8v2.13H8.04v2.88h2.49V21h2.97Z',
+  },
+  {
+    label: 'Instagram',
+    href: 'https://www.instagram.com/franklyspeaking_show/',
+    // Instagram camera
+    path: 'M12 2.2c-2.66 0-3 .01-4.04.06-1.05.05-1.76.21-2.39.46a4.8 4.8 0 0 0-1.74 1.13A4.8 4.8 0 0 0 2.7 5.59c-.25.63-.41 1.34-.46 2.39C2.2 9.02 2.2 9.36 2.2 12s.01 2.98.05 4.02c.05 1.05.21 1.76.46 2.39.26.66.6 1.22 1.13 1.74.52.52 1.08.87 1.74 1.13.63.24 1.34.41 2.39.46 1.04.04 1.38.05 4.03.05s2.99-.01 4.03-.05c1.05-.05 1.76-.22 2.39-.46a4.8 4.8 0 0 0 1.74-1.13c.52-.52.87-1.08 1.13-1.74.24-.63.41-1.34.46-2.39.04-1.04.05-1.38.05-4.02s-.01-2.98-.05-4.02c-.05-1.05-.22-1.76-.46-2.39a4.8 4.8 0 0 0-1.13-1.74A4.8 4.8 0 0 0 18.42 2.7c-.63-.25-1.34-.41-2.39-.46C14.99 2.2 14.65 2.2 12 2.2Zm0 1.76c2.6 0 2.92.01 3.95.06.96.04 1.48.2 1.82.34.46.17.79.38 1.13.72.34.34.55.67.72 1.13.13.34.3.86.34 1.82.05 1.03.06 1.34.06 3.95s-.01 2.92-.06 3.95c-.04.96-.21 1.48-.34 1.82-.17.46-.38.79-.72 1.13a3 3 0 0 1-1.13.72c-.34.13-.86.3-1.82.34-1.03.05-1.34.06-3.95.06s-2.92-.01-3.95-.06c-.96-.04-1.48-.21-1.82-.34a3 3 0 0 1-1.13-.72 3 3 0 0 1-.72-1.13c-.13-.34-.3-.86-.34-1.82-.05-1.03-.06-1.34-.06-3.95s.01-2.92.06-3.95c.04-.96.2-1.48.34-1.82.17-.46.38-.79.72-1.13.34-.34.67-.55 1.13-.72.34-.13.86-.3 1.82-.34 1.03-.05 1.34-.06 3.95-.06Zm0 3a5.04 5.04 0 1 0 0 10.08A5.04 5.04 0 0 0 12 6.96Zm0 8.31a3.27 3.27 0 1 1 0-6.54 3.27 3.27 0 0 1 0 6.54Zm6.41-8.51a1.18 1.18 0 1 1-2.36 0 1.18 1.18 0 0 1 2.36 0Z',
+  },
+]
+
+function SocialLinks({ className = '', iconClass = 'w-5 h-5' }: { className?: string; iconClass?: string }) {
+  return (
+    <div className={`flex items-center gap-4 ${className}`}>
+      {SOCIALS.map((s) => (
+        <a
+          key={s.label}
+          href={s.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Frankly Speaking on ${s.label}`}
+          title={s.label}
+          className="text-bone/60 hover:text-blue-bright transition-colors duration-300"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={iconClass}>
+            <path d={s.path} />
+          </svg>
+        </a>
+      ))}
+    </div>
+  )
+}
+
 const TICKER = [
   'GLOBAL DISPATCH — Israel & Iran: the prophetic timeline, decoded',
   'NEW EPISODE — The Case For Israel, Pt. 3',
@@ -811,6 +854,7 @@ function Masthead({ route }: { route: string }) {
         </nav>
 
         <div className="flex items-center gap-3 sm:gap-4">
+          <SocialLinks className="hidden md:flex" iconClass="w-[18px] h-[18px]" />
           <span className="hidden lg:block font-mono text-xs text-slate tabular-nums">
             CANFIELD, OH
           </span>
@@ -886,7 +930,8 @@ function Masthead({ route }: { route: string }) {
           <span className="w-2.5 h-2.5 rounded-full bg-white" />
           Watch the latest broadcast
         </a>
-        <p className="mt-8 font-mono text-xs text-slate">
+        <SocialLinks className="mt-8" iconClass="w-7 h-7" />
+        <p className="mt-6 font-mono text-xs text-slate">
           CANFIELD, OH · TOUCH HEAVEN STUDIOS
         </p>
       </nav>
@@ -920,7 +965,10 @@ function SiteFooter() {
             Touch Heaven ↗
           </a>
         </div>
-        <span className="font-mono text-xs text-slate">© 2026 Frankly Speaking</span>
+        <div className="flex flex-col items-start md:items-end gap-4">
+          <SocialLinks />
+          <span className="font-mono text-xs text-slate">© 2026 Frankly Speaking</span>
+        </div>
       </div>
     </footer>
   )
