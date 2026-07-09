@@ -19,18 +19,24 @@ const NAV = [
 const SOCIALS = [
   {
     label: 'YouTube',
+    handle: '@Franklyspeakingshow',
+    cta: 'Subscribe',
     href: 'https://www.youtube.com/@Franklyspeakingshow',
     // YouTube play button
     path: 'M21.58 7.19a2.5 2.5 0 0 0-1.76-1.77C18.25 5 12 5 12 5s-6.25 0-7.82.42A2.5 2.5 0 0 0 2.42 7.19 26.2 26.2 0 0 0 2 12a26.2 26.2 0 0 0 .42 4.81 2.5 2.5 0 0 0 1.76 1.77C5.75 19 12 19 12 19s6.25 0 7.82-.42a2.5 2.5 0 0 0 1.76-1.77A26.2 26.2 0 0 0 22 12a26.2 26.2 0 0 0-.42-4.81ZM10 15.13V8.87L15.25 12 10 15.13Z',
   },
   {
     label: 'Facebook',
+    handle: 'Frankly Speaking',
+    cta: 'Follow',
     href: 'https://www.facebook.com/people/Frankly-Speaking/61591621778787/',
     // Facebook "f"
     path: 'M13.5 21v-7.4h2.48l.37-2.88H13.5V8.88c0-.83.23-1.4 1.43-1.4h1.52V4.9c-.26-.03-1.17-.11-2.22-.11-2.2 0-3.7 1.34-3.7 3.8v2.13H8.04v2.88h2.49V21h2.97Z',
   },
   {
     label: 'Instagram',
+    handle: '@franklyspeaking_show',
+    cta: 'Follow',
     href: 'https://www.instagram.com/franklyspeaking_show/',
     // Instagram camera
     path: 'M12 2.2c-2.66 0-3 .01-4.04.06-1.05.05-1.76.21-2.39.46a4.8 4.8 0 0 0-1.74 1.13A4.8 4.8 0 0 0 2.7 5.59c-.25.63-.41 1.34-.46 2.39C2.2 9.02 2.2 9.36 2.2 12s.01 2.98.05 4.02c.05 1.05.21 1.76.46 2.39.26.66.6 1.22 1.13 1.74.52.52 1.08.87 1.74 1.13.63.24 1.34.41 2.39.46 1.04.04 1.38.05 4.03.05s2.99-.01 4.03-.05c1.05-.05 1.76-.22 2.39-.46a4.8 4.8 0 0 0 1.74-1.13c.52-.52.87-1.08 1.13-1.74.24-.63.41-1.34.46-2.39.04-1.04.05-1.38.05-4.02s-.01-2.98-.05-4.02c-.05-1.05-.22-1.76-.46-2.39a4.8 4.8 0 0 0-1.13-1.74A4.8 4.8 0 0 0 18.42 2.7c-.63-.25-1.34-.41-2.39-.46C14.99 2.2 14.65 2.2 12 2.2Zm0 1.76c2.6 0 2.92.01 3.95.06.96.04 1.48.2 1.82.34.46.17.79.38 1.13.72.34.34.55.67.72 1.13.13.34.3.86.34 1.82.05 1.03.06 1.34.06 3.95s-.01 2.92-.06 3.95c-.04.96-.21 1.48-.34 1.82-.17.46-.38.79-.72 1.13a3 3 0 0 1-1.13.72c-.34.13-.86.3-1.82.34-1.03.05-1.34.06-3.95.06s-2.92-.01-3.95-.06c-.96-.04-1.48-.21-1.82-.34a3 3 0 0 1-1.13-.72 3 3 0 0 1-.72-1.13c-.13-.34-.3-.86-.34-1.82-.05-1.03-.06-1.34-.06-3.95s.01-2.92.06-3.95c.04-.96.2-1.48.34-1.82.17-.46.38-.79.72-1.13.34-.34.67-.55 1.13-.72.34-.13.86-.3 1.82-.34 1.03-.05 1.34-.06 3.95-.06Zm0 3a5.04 5.04 0 1 0 0 10.08A5.04 5.04 0 0 0 12 6.96Zm0 8.31a3.27 3.27 0 1 1 0-6.54 3.27 3.27 0 0 1 0 6.54Zm6.41-8.51a1.18 1.18 0 1 1-2.36 0 1.18 1.18 0 0 1 2.36 0Z',
@@ -56,6 +62,74 @@ function SocialLinks({ className = '', iconClass = 'w-5 h-5' }: { className?: st
         </a>
       ))}
     </div>
+  )
+}
+
+/** Large magnetic social tile — glow follows the cursor, icon drifts toward it,
+    elastic settle on leave. Used in the home "Follow the broadcast" band. */
+function SocialTile({ s }: { s: (typeof SOCIALS)[number] }) {
+  const ref = useRef<HTMLAnchorElement>(null)
+  const iconRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    const icon = iconRef.current
+    if (!el || !icon) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const xTo = gsap.quickTo(el, 'x', { duration: 0.5, ease: 'power3.out' })
+    const yTo = gsap.quickTo(el, 'y', { duration: 0.5, ease: 'power3.out' })
+    const ixTo = gsap.quickTo(icon, 'x', { duration: 0.35, ease: 'power3.out' })
+    const iyTo = gsap.quickTo(icon, 'y', { duration: 0.35, ease: 'power3.out' })
+
+    const move = (e: MouseEvent) => {
+      const r = el.getBoundingClientRect()
+      const dx = e.clientX - (r.left + r.width / 2)
+      const dy = e.clientY - (r.top + r.height / 2)
+      xTo(dx * 0.1)
+      yTo(dy * 0.1)
+      ixTo(dx * 0.22)
+      iyTo(dy * 0.22)
+      el.style.setProperty('--mx', `${((e.clientX - r.left) / r.width) * 100}%`)
+      el.style.setProperty('--my', `${((e.clientY - r.top) / r.height) * 100}%`)
+    }
+    const enter = () => gsap.to(icon, { scale: 1.12, duration: 0.4, ease: 'power3.out' })
+    const leave = () => {
+      gsap.to(el, { x: 0, y: 0, duration: 0.8, ease: 'elastic.out(1, 0.45)' })
+      gsap.to(icon, { x: 0, y: 0, scale: 1, duration: 0.8, ease: 'elastic.out(1, 0.45)' })
+    }
+
+    el.addEventListener('mousemove', move)
+    el.addEventListener('mouseenter', enter)
+    el.addEventListener('mouseleave', leave)
+    return () => {
+      el.removeEventListener('mousemove', move)
+      el.removeEventListener('mouseenter', enter)
+      el.removeEventListener('mouseleave', leave)
+    }
+  }, [])
+
+  return (
+    <a
+      ref={ref}
+      href={s.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Frankly Speaking on ${s.label} — ${s.handle}`}
+      className="social-tile group relative overflow-hidden rounded-2xl border border-line bg-ink-soft px-8 py-12 flex flex-col items-center text-center will-change-transform"
+    >
+      <span aria-hidden className="social-tile-glow" />
+      <div ref={iconRef} className="social-tile-icon relative text-bone transition-colors duration-300 group-hover:text-blue-bright">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className="w-16 h-16 md:w-20 md:h-20">
+          <path d={s.path} />
+        </svg>
+      </div>
+      <span className="relative mt-7 font-display text-2xl tracking-tight">{s.label}</span>
+      <span className="relative mt-1.5 font-mono text-xs text-slate">{s.handle}</span>
+      <span className="relative mt-5 kicker text-blue-bright opacity-0 translate-y-1 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+        {s.cta} →
+      </span>
+    </a>
   )
 }
 
@@ -470,6 +544,27 @@ function Home() {
                 </p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FOLLOW — SOCIAL CHANNELS */}
+      <section className="border-t border-line">
+        <div className="mx-auto max-w-[1400px] px-6 py-20 md:py-24">
+          <div className="text-center" data-reveal style={{ transform: 'translateY(28px)' }}>
+            <span className="kicker text-blue-bright">Stay connected</span>
+            <h2 className="mt-4 font-display text-3xl md:text-5xl tracking-tight leading-[1.04]">
+              Follow the broadcast
+            </h2>
+            <p className="mt-4 max-w-xl mx-auto text-bone/60 leading-relaxed">
+              New dispatches, clips, and moments from the studio — wherever you
+              watch.
+            </p>
+          </div>
+          <div data-grid className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {SOCIALS.map((s) => (
+              <SocialTile key={s.label} s={s} />
+            ))}
           </div>
         </div>
       </section>

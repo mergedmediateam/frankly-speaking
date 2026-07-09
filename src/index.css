@@ -195,3 +195,31 @@ body {
 }
 
 ::selection { background: var(--color-blue); color: #fff; }
+
+/* --- Social follow tiles (home "Follow the broadcast" band) --- */
+.social-tile {
+  --mx: 50%;
+  --my: 50%;
+}
+.social-tile-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  background: radial-gradient(
+    240px circle at var(--mx) var(--my),
+    rgba(59, 139, 255, 0.22),
+    transparent 65%
+  );
+}
+.social-tile:hover .social-tile-glow { opacity: 1; }
+.social-tile { transition: border-color 0.35s ease; }
+.social-tile:hover { border-color: rgba(59, 139, 255, 0.45); }
+.social-tile-icon {
+  filter: drop-shadow(0 0 0 rgba(59, 139, 255, 0));
+  transition: filter 0.4s ease;
+}
+.social-tile:hover .social-tile-icon {
+  filter: drop-shadow(0 0 22px rgba(59, 139, 255, 0.55));
+}
