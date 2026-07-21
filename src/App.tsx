@@ -3,7 +3,7 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 import playlist from './data/videos.json'
-import { FORUM_FORM } from './config'
+import { FORUM_FORM, PARTNER_FORM } from './config'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -12,7 +12,7 @@ gsap.registerPlugin(ScrollTrigger)
 const NAV = [
   { label: 'Dispatches', href: '#/dispatches' },
   { label: 'Series', href: '#/series' },
-  { label: 'The Forum', href: '#/forum' },
+  { label: 'Beyond the Show', href: '#/beyond' },
   { label: 'About', href: '#/about' },
 ]
 
@@ -136,7 +136,8 @@ function SocialTile({ s }: { s: (typeof SOCIALS)[number] }) {
 const TICKER = [
   'GLOBAL DISPATCH — Israel & Iran: the prophetic timeline, decoded',
   'NEW EPISODE — The Case For Israel, Pt. 3',
-  'FORUM OPENS — Kingdom Strategy cohort now enrolling',
+  'BEYOND THE SHOW — the guests and conversations behind the broadcast',
+  'BECOME A PARTNER — help keep the broadcast on air',
   'LIVE WED 8PM ET — Touch Heaven Studios, Canfield OH',
 ]
 
@@ -424,10 +425,16 @@ function Home() {
               Watch the latest broadcast
             </a>
             <a
-              href="#/forum"
+              href="#/partner"
+              className="inline-flex items-center gap-2 bg-blue text-white px-7 py-3.5 rounded-full font-medium hover:bg-blue-bright transition-colors"
+            >
+              Become a Partner
+            </a>
+            <a
+              href="#/beyond"
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-bone/25 text-bone hover:border-blue-bright hover:text-white transition-colors backdrop-blur-sm"
             >
-              Join the Forum →
+              Beyond the Show →
             </a>
           </div>
         </div>
@@ -664,7 +671,59 @@ function SeriesPage() {
   )
 }
 
-function ForumPage() {
+/* Guests featured on the broadcast — shown on Beyond the Show.
+   episodeId (optional) links the card to that conversation and provides the
+   photo fallback (episode thumbnail) when no dedicated photo exists. */
+type Guest = { name: string; title: string; photo?: string; episodeId?: string }
+
+const GUESTS: Guest[] = []
+
+function GuestCard({ g }: { g: Guest }) {
+  const img = g.photo ?? (g.episodeId ? `https://i.ytimg.com/vi/${g.episodeId}/hqdefault.jpg` : null)
+  const inner = (
+    <>
+      <div className="relative aspect-[4/5] rounded-lg overflow-hidden border border-line bg-ink-soft transition-[transform,box-shadow,border-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1.5 group-hover:border-blue/40 group-hover:shadow-[0_24px_60px_-24px_rgba(31,111,229,0.6)]">
+        {img ? (
+          <img
+            src={img}
+            alt={g.name}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110"
+          />
+        ) : (
+          <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-blue-deep/40 via-ink-soft to-ink">
+            <span className="font-display text-5xl text-bone/30">
+              {g.name
+                .split(' ')
+                .map((w) => w[0])
+                .slice(0, 2)
+                .join('')}
+            </span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent" />
+      </div>
+      <h3 className="mt-4 font-display text-xl tracking-tight text-bone group-hover:text-white transition-colors">
+        {g.name}
+      </h3>
+      <p className="mt-1 text-sm text-bone/60 leading-snug">{g.title}</p>
+      {g.episodeId && (
+        <span className="mt-3 inline-block kicker text-blue-bright opacity-80 group-hover:opacity-100 transition-opacity">
+          Watch the conversation →
+        </span>
+      )}
+    </>
+  )
+  return g.episodeId ? (
+    <a href={`#/watch/${g.episodeId}`} className="group block">
+      {inner}
+    </a>
+  ) : (
+    <div className="group">{inner}</div>
+  )
+}
+
+function BeyondPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
@@ -691,15 +750,40 @@ function ForumPage() {
   }
 
   return (
-    <main className="min-h-[calc(100svh-104px)] grid place-items-center">
+    <main className="min-h-[calc(100svh-104px)]">
+      <div className="mx-auto max-w-[1400px] px-6 pt-14">
+        <PageHeader
+          kicker="Off the air"
+          title="Beyond the Show"
+          sub="The guests, the conversations, and the community that carry the broadcast past the cameras."
+        />
+
+        {GUESTS.length > 0 && (
+          <div className="pb-8">
+            <div className="flex items-end justify-between gap-6 mb-8" data-reveal style={{ transform: 'translateY(24px)' }}>
+              <div>
+                <span className="kicker text-blue-bright">On the show</span>
+                <h2 className="mt-2 font-display text-2xl md:text-3xl tracking-tight">The guests</h2>
+              </div>
+            </div>
+            <div data-grid className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
+              {GUESTS.map((g) => (
+                <GuestCard key={g.name} g={g} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="border-t border-line mt-8">
       <div className="mx-auto max-w-[1400px] px-6 py-24 text-center" data-reveal style={{ transform: 'translateY(28px)' }}>
         <span className="kicker text-blue-bright">Join the room</span>
-        <h1 className="mt-5 font-display text-[clamp(2.6rem,7vw,5.5rem)] leading-[0.98] tracking-tight">
-          Register for <span className="italic">The Forum</span>
+        <h1 className="mt-5 font-display text-[clamp(2.2rem,5vw,4rem)] leading-[0.98] tracking-tight">
+          Be part of what's <span className="italic">beyond</span>
         </h1>
         <p className="mt-6 max-w-xl mx-auto text-bone/65 leading-relaxed">
-          A live cohort for leaders who want strategy, alignment, and prophetic
-          insight applied to the moment we're living in.
+          Get first word on new conversations, gatherings, and everything
+          happening around the broadcast.
         </p>
 
         {status === 'done' ? (
@@ -709,7 +793,7 @@ function ForumPage() {
             </div>
             <h2 className="mt-6 font-display text-2xl tracking-tight">You're on the list.</h2>
             <p className="mt-3 text-bone/65">
-              Watch your inbox — details for the next Forum cohort are on the way.
+              Watch your inbox — everything beyond the show lands there first.
             </p>
           </div>
         ) : (
@@ -754,6 +838,109 @@ function ForumPage() {
           TOUCH HEAVEN MINISTRIES · DEEP CALLS 2 DEEP UNIVERSITY
         </p>
       </div>
+      </div>
+    </main>
+  )
+}
+
+function PartnerPage() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email) return
+    setStatus('loading')
+    try {
+      const body = new URLSearchParams()
+      body.append(PARTNER_FORM.nameField, name)
+      body.append(PARTNER_FORM.emailField, email)
+      if (message) body.append(PARTNER_FORM.messageField, message)
+      await fetch(PARTNER_FORM.action, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+      })
+      setStatus('done')
+    } catch {
+      setStatus('error')
+    }
+  }
+
+  return (
+    <main className="min-h-[calc(100svh-104px)] grid place-items-center">
+      <div className="mx-auto max-w-[1400px] px-6 py-24 text-center" data-reveal style={{ transform: 'translateY(28px)' }}>
+        <span className="kicker text-blue-bright">Stand with the broadcast</span>
+        <h1 className="mt-5 font-display text-[clamp(2.6rem,7vw,5.5rem)] leading-[0.98] tracking-tight">
+          Become a <span className="italic">Partner</span>
+        </h1>
+        <p className="mt-6 max-w-xl mx-auto text-bone/65 leading-relaxed">
+          Partners keep Frankly Speaking on the air — daily Kingdom insight,
+          free for everyone, everywhere. Leave your details and the team will
+          reach out personally about partnering with the show.
+        </p>
+
+        {status === 'done' ? (
+          <div className="mt-12 max-w-md mx-auto" aria-live="polite">
+            <div className="mx-auto grid place-items-center w-16 h-16 rounded-full bg-blue/15 border border-blue-bright/40">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue-bright)" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
+            </div>
+            <h2 className="mt-6 font-display text-2xl tracking-tight">Thank you.</h2>
+            <p className="mt-3 text-bone/65">
+              The team has your details — expect a personal note about partnering
+              with the show.
+            </p>
+          </div>
+        ) : (
+          <form
+            className="mt-10 max-w-md mx-auto flex flex-col gap-3"
+            onSubmit={submit}
+            aria-live="polite"
+          >
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Your name"
+              autoComplete="name"
+              className="w-full bg-transparent px-6 py-4 rounded-full border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright transition-colors"
+            />
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@email.com"
+              autoComplete="email"
+              className="w-full bg-transparent px-6 py-4 rounded-full border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright transition-colors"
+            />
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Anything you'd like the team to know (optional)"
+              rows={3}
+              className="w-full bg-transparent px-6 py-4 rounded-3xl border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright transition-colors resize-none"
+            />
+            <button
+              type="submit"
+              disabled={status === 'loading'}
+              className="bg-blue text-white px-7 py-4 rounded-full font-medium hover:bg-blue-bright transition-[background-color,transform] active:scale-95 disabled:opacity-60"
+            >
+              {status === 'loading' ? '…' : 'Become a Partner'}
+            </button>
+            {status === 'error' && (
+              <p className="text-sm text-red-400">Something went wrong — please try again.</p>
+            )}
+          </form>
+        )}
+
+        <p className="mt-8 font-mono text-xs text-slate">
+          TOUCH HEAVEN MINISTRIES · CANFIELD, OHIO
+        </p>
+      </div>
     </main>
   )
 }
@@ -792,10 +979,10 @@ function AboutPage() {
                 Watch the latest broadcast
               </a>
               <a
-                href="#/forum"
+                href="#/beyond"
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-line text-bone/80 hover:border-blue-bright hover:text-bone transition-colors"
               >
-                Join the Forum →
+                Beyond the Show →
               </a>
             </div>
           </div>
@@ -954,6 +1141,12 @@ function Masthead({ route }: { route: string }) {
             CANFIELD, OH
           </span>
           <a
+            href="#/partner"
+            className="hidden sm:inline-flex border border-line text-bone/85 text-sm font-medium rounded-full px-5 py-2 hover:border-blue-bright hover:text-white transition-[border-color,color,transform] duration-300 hover:scale-[1.04] active:scale-95"
+          >
+            Become a Partner
+          </a>
+          <a
             href={`#/watch/${LATEST_ID}`}
             className="bg-blue text-white text-sm font-medium rounded-full px-5 py-2 hover:bg-blue-bright transition-[background-color,transform] duration-300 hover:scale-[1.04] active:scale-95"
           >
@@ -1025,6 +1218,13 @@ function Masthead({ route }: { route: string }) {
           <span className="w-2.5 h-2.5 rounded-full bg-white" />
           Watch the latest broadcast
         </a>
+        <a
+          href="#/partner"
+          onClick={() => setMenuOpen(false)}
+          className="mt-3 inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full border border-line text-bone hover:border-blue-bright hover:text-white transition-colors font-medium"
+        >
+          Become a Partner
+        </a>
         <SocialLinks className="mt-8" iconClass="w-7 h-7" />
         <p className="mt-6 font-mono text-xs text-slate">
           CANFIELD, OH · TOUCH HEAVEN STUDIOS
@@ -1051,6 +1251,9 @@ function SiteFooter() {
               {n.label}
             </a>
           ))}
+          <a href="#/partner" className="hover:text-bone transition-colors">
+            Become a Partner
+          </a>
           <a
             href="https://www.touchheaven.com/"
             target="_blank"
@@ -1078,11 +1281,13 @@ export default function App() {
 
   const watchMatch = /^#\/watch\/([A-Za-z0-9_-]{4,})/.exec(route)
   const watchId = watchMatch ? watchMatch[1] : null
-  let page: 'home' | 'dispatches' | 'series' | 'forum' | 'about' | 'watch' = 'home'
+  let page: 'home' | 'dispatches' | 'series' | 'beyond' | 'partner' | 'about' | 'watch' = 'home'
   if (watchId) page = 'watch'
   else if (route.startsWith('#/dispatches')) page = 'dispatches'
   else if (route.startsWith('#/series')) page = 'series'
-  else if (route.startsWith('#/forum')) page = 'forum'
+  // "#/forum" kept as an alias so old links keep working
+  else if (route.startsWith('#/beyond') || route.startsWith('#/forum')) page = 'beyond'
+  else if (route.startsWith('#/partner')) page = 'partner'
   else if (route.startsWith('#/about')) page = 'about'
 
   // Smooth scroll (global)
@@ -1221,8 +1426,10 @@ export default function App() {
           <DispatchesPage />
         ) : page === 'series' ? (
           <SeriesPage />
-        ) : page === 'forum' ? (
-          <ForumPage />
+        ) : page === 'beyond' ? (
+          <BeyondPage />
+        ) : page === 'partner' ? (
+          <PartnerPage />
         ) : page === 'about' ? (
           <AboutPage />
         ) : (

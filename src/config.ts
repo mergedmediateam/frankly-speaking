@@ -8,3 +8,13 @@ export const FORUM_FORM = {
   nameField: 'entry.1567136615',
   emailField: 'entry.474959345',
 }
+
+// Partner interest → its own Google Form + Sheet (same recipe, separate list so
+// partner leads never mix with community signups).
+export const PARTNER_FORM = {
+  action:
+    'https://docs.google.com/forms/d/e/1FAIpQLSdDcM53z0erZEtuQeN7OGAkWGu9Y3-urQZuULS5-2oxS7NbCw/formResponse',
+  nameField: 'entry.1184791873',
+  emailField: 'entry.1532441216',
+  messageField: 'entry.147624919',
+}
