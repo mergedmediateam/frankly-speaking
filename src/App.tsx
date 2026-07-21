@@ -418,13 +418,6 @@ function Home() {
             style={{ opacity: 0, transform: 'translateY(16px)' }}
           >
             <a
-              href={`#/watch/${LATEST_ID}`}
-              className="group inline-flex items-center gap-3 bg-bone text-ink px-7 py-3.5 rounded-full font-medium hover:bg-white transition-colors"
-            >
-              <span className="w-2.5 h-2.5 rounded-full bg-blue" />
-              Watch the latest broadcast
-            </a>
-            <a
               href="#/partner"
               className="inline-flex items-center gap-2 bg-blue text-white px-7 py-3.5 rounded-full font-medium hover:bg-blue-bright transition-colors"
             >
@@ -435,6 +428,13 @@ function Home() {
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-bone/25 text-bone hover:border-blue-bright hover:text-white transition-colors backdrop-blur-sm"
             >
               Be On The Show →
+            </a>
+            <a
+              href={`#/watch/${LATEST_ID}`}
+              className="group inline-flex items-center gap-3 bg-bone text-ink px-7 py-3.5 rounded-full font-medium hover:bg-white transition-colors"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-blue" />
+              Watch the latest broadcast
             </a>
           </div>
         </div>
