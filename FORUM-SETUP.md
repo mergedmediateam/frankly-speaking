@@ -5,7 +5,7 @@ responses land automatically in linked Google Sheets (Drive: My Drive › Frank 
 No server, no Apps Script, free, and updates in real time.
 
 ## What's connected
-- **Beyond the Show** (`#/beyond`, formerly The Forum — `#/forum` still aliases to it):
+- **Be On The Show** (`#/be-on-the-show`, formerly The Forum — `#/beyond` and `#/forum` still alias to it):
   Form "Frankly Speaking — The Forum" → Sheet "… (Responses)" — Timestamp · Name · Email.
   Wiring: `src/config.ts` → `FORUM_FORM`.
 - **Become a Partner** (`#/partner`, added 2026-07-21): Form "Frankly Speaking — Partners"

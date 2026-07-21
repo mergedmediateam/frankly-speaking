@@ -12,7 +12,7 @@ gsap.registerPlugin(ScrollTrigger)
 const NAV = [
   { label: 'Dispatches', href: '#/dispatches' },
   { label: 'Series', href: '#/series' },
-  { label: 'Beyond the Show', href: '#/beyond' },
+  { label: 'Be On The Show', href: '#/be-on-the-show' },
   { label: 'About', href: '#/about' },
 ]
 
@@ -136,7 +136,7 @@ function SocialTile({ s }: { s: (typeof SOCIALS)[number] }) {
 const TICKER = [
   'GLOBAL DISPATCH — Israel & Iran: the prophetic timeline, decoded',
   'NEW EPISODE — The Case For Israel, Pt. 3',
-  'BEYOND THE SHOW — the guests and conversations behind the broadcast',
+  'BE ON THE SHOW — meet the guests, then take your seat at the desk',
   'BECOME A PARTNER — help keep the broadcast on air',
   'LIVE WED 8PM ET — Touch Heaven Studios, Canfield OH',
 ]
@@ -431,10 +431,10 @@ function Home() {
               Become a Partner
             </a>
             <a
-              href="#/beyond"
+              href="#/be-on-the-show"
               className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-bone/25 text-bone hover:border-blue-bright hover:text-white transition-colors backdrop-blur-sm"
             >
-              Beyond the Show →
+              Be On The Show →
             </a>
           </div>
         </div>
@@ -753,9 +753,9 @@ function BeyondPage() {
     <main className="min-h-[calc(100svh-104px)]">
       <div className="mx-auto max-w-[1400px] px-6 pt-14">
         <PageHeader
-          kicker="Off the air"
-          title="Beyond the Show"
-          sub="The guests, the conversations, and the community that carry the broadcast past the cameras."
+          kicker="Join the broadcast"
+          title="Be On The Show"
+          sub="The guests who've joined Frank at the desk — and how you can be next."
         />
 
         {GUESTS.length > 0 && (
@@ -777,13 +777,13 @@ function BeyondPage() {
 
       <div className="border-t border-line mt-8">
       <div className="mx-auto max-w-[1400px] px-6 py-24 text-center" data-reveal style={{ transform: 'translateY(28px)' }}>
-        <span className="kicker text-blue-bright">Join the room</span>
+        <span className="kicker text-blue-bright">Your turn</span>
         <h1 className="mt-5 font-display text-[clamp(2.2rem,5vw,4rem)] leading-[0.98] tracking-tight">
-          Be part of what's <span className="italic">beyond</span>
+          Want to be <span className="italic">on the show?</span>
         </h1>
         <p className="mt-6 max-w-xl mx-auto text-bone/65 leading-relaxed">
-          Get first word on new conversations, gatherings, and everything
-          happening around the broadcast.
+          Leave your details — the team reviews every request and reaches out
+          about joining Frank on the broadcast.
         </p>
 
         {status === 'done' ? (
@@ -793,7 +793,7 @@ function BeyondPage() {
             </div>
             <h2 className="mt-6 font-display text-2xl tracking-tight">You're on the list.</h2>
             <p className="mt-3 text-bone/65">
-              Watch your inbox — everything beyond the show lands there first.
+              Watch your inbox — the team will be in touch about joining the show.
             </p>
           </div>
         ) : (
@@ -825,7 +825,7 @@ function BeyondPage() {
                 disabled={status === 'loading'}
                 className="bg-blue text-white px-7 font-medium hover:bg-blue-bright transition-[background-color,transform] active:scale-95 disabled:opacity-60"
               >
-                {status === 'loading' ? '…' : 'Join'}
+                {status === 'loading' ? '…' : 'Apply'}
               </button>
             </div>
             {status === 'error' && (
@@ -979,10 +979,10 @@ function AboutPage() {
                 Watch the latest broadcast
               </a>
               <a
-                href="#/beyond"
+                href="#/be-on-the-show"
                 className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full border border-line text-bone/80 hover:border-blue-bright hover:text-bone transition-colors"
               >
-                Beyond the Show →
+                Be On The Show →
               </a>
             </div>
           </div>
@@ -1285,8 +1285,13 @@ export default function App() {
   if (watchId) page = 'watch'
   else if (route.startsWith('#/dispatches')) page = 'dispatches'
   else if (route.startsWith('#/series')) page = 'series'
-  // "#/forum" kept as an alias so old links keep working
-  else if (route.startsWith('#/beyond') || route.startsWith('#/forum')) page = 'beyond'
+  // "#/beyond" and "#/forum" kept as aliases so old links keep working
+  else if (
+    route.startsWith('#/be-on-the-show') ||
+    route.startsWith('#/beyond') ||
+    route.startsWith('#/forum')
+  )
+    page = 'beyond'
   else if (route.startsWith('#/partner')) page = 'partner'
   else if (route.startsWith('#/about')) page = 'about'
 
