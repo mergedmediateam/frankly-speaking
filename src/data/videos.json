@@ -1,7 +1,7 @@
 {
   "playlistId": "PLjxZripGCNoRFIX8HQIoufzmXD7Hegavj",
   "playlistUrl": "https://www.youtube.com/playlist?list=PLjxZripGCNoRFIX8HQIoufzmXD7Hegavj",
-  "count": 97,
+  "count": 98,
   "videos": [
     {
       "id": "BGgUDTcHyOE",
@@ -487,6 +487,11 @@
       "id": "wodkMmsJbDQ",
       "title": "February 28th, 2026 Global Dispatch: Israel & Iran – In-Depth Analysis | TCT / Frankly Speaking",
       "duration": 3531
+    },
+    {
+      "id": "TzNazFzbvvk",
+      "title": "Pastor Frank Amedia with Jentezen Franklin on Frankly Speaking Part 1",
+      "duration": 1652
     }
   ]
 }
