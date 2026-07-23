@@ -138,7 +138,7 @@ const TICKER = [
   'GLOBAL DISPATCH — Israel & Iran: the prophetic timeline, decoded',
   'NEW EPISODE — The Case For Israel, Pt. 3',
   'BE ON THE SHOW — meet the guests, then take your seat at the desk',
-  'BECOME A PARTNER — help keep the broadcast on air',
+  'BECOME A SPONSOR — help keep the broadcast on air',
   'LIVE WED 8PM ET — Touch Heaven Studios, Canfield OH',
 ]
 
@@ -419,10 +419,10 @@ function Home() {
             style={{ opacity: 0, transform: 'translateY(16px)' }}
           >
             <a
-              href="#/partner"
+              href="#/sponsor"
               className="inline-flex items-center gap-2 bg-blue text-white px-7 py-3.5 rounded-full font-medium hover:bg-blue-bright transition-colors"
             >
-              Become a Partner
+              Become a Sponsor
             </a>
             <a
               href="#/be-on-the-show"
@@ -1164,12 +1164,12 @@ function PartnerPage() {
       <div className="mx-auto max-w-[1400px] px-6 py-24 text-center" data-reveal style={{ transform: 'translateY(28px)' }}>
         <span className="kicker text-blue-bright">Stand with the broadcast</span>
         <h1 className="mt-5 font-display text-[clamp(2.6rem,7vw,5.5rem)] leading-[0.98] tracking-tight">
-          Become a <span className="italic">Partner</span>
+          Become a <span className="italic">Sponsor</span>
         </h1>
         <p className="mt-6 max-w-xl mx-auto text-bone/65 leading-relaxed">
-          Partners keep Frankly Speaking on the air — daily Kingdom insight,
+          Sponsors keep Frankly Speaking on the air — daily Kingdom insight,
           free for everyone, everywhere. Leave your details and the team will
-          reach out personally about partnering with the show.
+          reach out personally about sponsoring the show.
         </p>
 
         {status === 'done' ? (
@@ -1179,8 +1179,8 @@ function PartnerPage() {
             </div>
             <h2 className="mt-6 font-display text-2xl tracking-tight">Thank you.</h2>
             <p className="mt-3 text-bone/65">
-              The team has your details — expect a personal note about partnering
-              with the show.
+              The team has your details — expect a personal note about sponsoring
+              the show.
             </p>
           </div>
         ) : (
@@ -1218,7 +1218,7 @@ function PartnerPage() {
               disabled={status === 'loading'}
               className="bg-blue text-white px-7 py-4 rounded-full font-medium hover:bg-blue-bright transition-[background-color,transform] active:scale-95 disabled:opacity-60"
             >
-              {status === 'loading' ? '…' : 'Become a Partner'}
+              {status === 'loading' ? '…' : 'Become a Sponsor'}
             </button>
             {status === 'error' && (
               <p className="text-sm text-red-400">Something went wrong — please try again.</p>
@@ -1423,10 +1423,10 @@ function Masthead({ route }: { route: string }) {
             CANFIELD, OH
           </span>
           <a
-            href="#/partner"
+            href="#/sponsor"
             className="hidden sm:inline-flex border border-line text-bone/85 text-sm font-medium rounded-full px-5 py-2 hover:border-blue-bright hover:text-white transition-[border-color,color,transform] duration-300 hover:scale-[1.04] active:scale-95"
           >
-            Become a Partner
+            Become a Sponsor
           </a>
           <a
             href={`#/watch/${LATEST_ID}`}
@@ -1501,11 +1501,11 @@ function Masthead({ route }: { route: string }) {
           Watch the latest broadcast
         </a>
         <a
-          href="#/partner"
+          href="#/sponsor"
           onClick={() => setMenuOpen(false)}
           className="mt-3 inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full border border-line text-bone hover:border-blue-bright hover:text-white transition-colors font-medium"
         >
-          Become a Partner
+          Become a Sponsor
         </a>
         <SocialLinks className="mt-8" iconClass="w-7 h-7" />
         <p className="mt-6 font-mono text-xs text-slate">
@@ -1533,8 +1533,8 @@ function SiteFooter() {
               {n.label}
             </a>
           ))}
-          <a href="#/partner" className="hover:text-bone transition-colors">
-            Become a Partner
+          <a href="#/sponsor" className="hover:text-bone transition-colors">
+            Become a Sponsor
           </a>
           <a
             href="https://www.touchheaven.com/"
@@ -1574,7 +1574,7 @@ export default function App() {
     route.startsWith('#/forum')
   )
     page = 'beyond'
-  else if (route.startsWith('#/partner')) page = 'partner'
+  else if (route.startsWith('#/sponsor') || route.startsWith('#/partner')) page = 'partner'
   else if (route.startsWith('#/about')) page = 'about'
 
   // Smooth scroll (global)
