@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
-import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react'
+import { motion, useScroll, useTransform, useReducedMotion, useMotionValue, useSpring } from 'motion/react'
+import type { MotionValue } from 'motion/react'
 import playlist from './data/videos.json'
 import { FORUM_FORM, PARTNER_FORM } from './config'
 
@@ -1132,6 +1133,140 @@ function BeyondPage() {
   )
 }
 
+/* --- Sponsor page ambient backdrop -------------------------------------
+   Floating broadcast elements (glow orbs, signal rings, play triangles,
+   sparks, dots) in two depth layers: staggered entrance on page load,
+   endless slow drift, spring-smoothed mouse parallax. Pure decoration —
+   pointer-events-none, low opacity, reduced-motion aware. */
+type BackdropItem = {
+  kind: 'orb' | 'ring' | 'play' | 'spark' | 'dot'
+  x: number // left, %
+  y: number // top, %
+  size: number // px
+  depth: number // mouse-parallax travel (px per half-viewport)
+  dur: number // drift loop seconds
+  delay: number // entrance delay
+  o: number // resting opacity
+}
+
+const SPONSOR_BACKDROP: BackdropItem[] = [
+  // deep glow orbs (far layer)
+  { kind: 'orb', x: 6, y: 12, size: 380, depth: 14, dur: 13, delay: 0.2, o: 0.5 },
+  { kind: 'orb', x: 78, y: 58, size: 460, depth: 10, dur: 16, delay: 0.35, o: 0.45 },
+  { kind: 'orb', x: 55, y: -8, size: 300, depth: 18, dur: 14, delay: 0.5, o: 0.35 },
+  // signal rings
+  { kind: 'ring', x: 12, y: 62, size: 150, depth: 30, dur: 9, delay: 0.55, o: 0.5 },
+  { kind: 'ring', x: 84, y: 16, size: 90, depth: 42, dur: 8, delay: 0.7, o: 0.6 },
+  { kind: 'ring', x: 70, y: 82, size: 60, depth: 52, dur: 7, delay: 0.85, o: 0.5 },
+  { kind: 'ring', x: 26, y: 8, size: 44, depth: 48, dur: 7.5, delay: 1.0, o: 0.45 },
+  // play triangles
+  { kind: 'play', x: 90, y: 44, size: 40, depth: 46, dur: 8.5, delay: 0.75, o: 0.55 },
+  { kind: 'play', x: 7, y: 36, size: 30, depth: 54, dur: 7.2, delay: 0.9, o: 0.5 },
+  { kind: 'play', x: 38, y: 88, size: 26, depth: 40, dur: 9.5, delay: 1.1, o: 0.4 },
+  // sparks (plus marks)
+  { kind: 'spark', x: 20, y: 26, size: 18, depth: 60, dur: 6.5, delay: 1.05, o: 0.6 },
+  { kind: 'spark', x: 64, y: 10, size: 14, depth: 64, dur: 6, delay: 1.2, o: 0.5 },
+  { kind: 'spark', x: 88, y: 74, size: 16, depth: 58, dur: 7, delay: 1.15, o: 0.55 },
+  { kind: 'spark', x: 33, y: 70, size: 12, depth: 66, dur: 6.2, delay: 1.3, o: 0.45 },
+  // dots
+  { kind: 'dot', x: 48, y: 20, size: 6, depth: 70, dur: 5.5, delay: 1.25, o: 0.6 },
+  { kind: 'dot', x: 15, y: 84, size: 8, depth: 62, dur: 6.8, delay: 1.35, o: 0.5 },
+  { kind: 'dot', x: 94, y: 30, size: 5, depth: 74, dur: 5.8, delay: 1.4, o: 0.55 },
+]
+
+function BackdropShape({ it }: { it: BackdropItem }) {
+  const s = it.size
+  if (it.kind === 'orb')
+    return (
+      <div
+        className="rounded-full blur-3xl"
+        style={{ width: s, height: s, background: 'radial-gradient(circle, rgba(31,111,229,0.35), rgba(12,63,150,0.12) 55%, transparent 72%)' }}
+      />
+    )
+  if (it.kind === 'ring')
+    return (
+      <div
+        className="rounded-full border border-blue-bright/30"
+        style={{ width: s, height: s, boxShadow: '0 0 24px rgba(59,139,255,0.12) inset' }}
+      />
+    )
+  if (it.kind === 'play')
+    return (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <path d="M8 5.5v13l11-6.5z" stroke="rgba(59,139,255,0.55)" strokeWidth="1.4" strokeLinejoin="round" />
+      </svg>
+    )
+  if (it.kind === 'spark')
+    return (
+      <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+        <path d="M12 3v18M3 12h18" stroke="rgba(207,217,232,0.5)" strokeWidth="1.6" strokeLinecap="round" />
+      </svg>
+    )
+  return <div className="rounded-full bg-blue-bright/60" style={{ width: s, height: s }} />
+}
+
+function BackdropFloat({
+  it,
+  smx,
+  smy,
+  reduced,
+}: {
+  it: BackdropItem
+  smx: MotionValue<number>
+  smy: MotionValue<number>
+  reduced: boolean | null
+}) {
+  const x = useTransform(smx, (v) => v * it.depth)
+  const y = useTransform(smy, (v) => v * it.depth)
+  const spin = it.kind === 'ring' || it.kind === 'play' || it.kind === 'spark'
+  return (
+    <motion.div
+      className="absolute"
+      style={{ left: `${it.x}%`, top: `${it.y}%`, x, y }}
+      initial={reduced ? false : { opacity: 0, scale: 0.4 }}
+      animate={{ opacity: it.o, scale: 1 }}
+      transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1], delay: it.delay }}
+    >
+      <motion.div
+        animate={
+          reduced
+            ? undefined
+            : { y: [0, -16, 0], rotate: spin ? [0, it.kind === 'spark' ? 90 : 10, 0] : 0 }
+        }
+        transition={reduced ? undefined : { duration: it.dur, repeat: Infinity, ease: 'easeInOut', delay: it.delay }}
+      >
+        <BackdropShape it={it} />
+      </motion.div>
+    </motion.div>
+  )
+}
+
+function SponsorBackdrop() {
+  const reduced = useReducedMotion()
+  const mx = useMotionValue(0)
+  const my = useMotionValue(0)
+  const smx = useSpring(mx, { stiffness: 50, damping: 18, mass: 0.4 })
+  const smy = useSpring(my, { stiffness: 50, damping: 18, mass: 0.4 })
+
+  useEffect(() => {
+    if (reduced) return
+    const onMove = (e: PointerEvent) => {
+      mx.set(e.clientX / window.innerWidth - 0.5)
+      my.set(e.clientY / window.innerHeight - 0.5)
+    }
+    window.addEventListener('pointermove', onMove)
+    return () => window.removeEventListener('pointermove', onMove)
+  }, [reduced, mx, my])
+
+  return (
+    <div aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+      {SPONSOR_BACKDROP.map((it, i) => (
+        <BackdropFloat key={i} it={it} smx={smx} smy={smy} reduced={reduced} />
+      ))}
+    </div>
+  )
+}
+
 function PartnerPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -1160,8 +1295,9 @@ function PartnerPage() {
   }
 
   return (
-    <main className="min-h-[calc(100svh-104px)] grid place-items-center">
-      <div className="mx-auto max-w-[1400px] px-6 py-24 text-center" data-reveal style={{ transform: 'translateY(28px)' }}>
+    <main className="relative min-h-[calc(100svh-104px)] grid place-items-center">
+      <SponsorBackdrop />
+      <div className="relative z-10 mx-auto max-w-[1400px] px-6 py-24 text-center" data-reveal style={{ transform: 'translateY(28px)' }}>
         <span className="kicker text-blue-bright">Stand with the broadcast</span>
         <h1 className="mt-5 font-display text-[clamp(2.6rem,7vw,5.5rem)] leading-[0.98] tracking-tight">
           Become a <span className="italic">Sponsor</span>
