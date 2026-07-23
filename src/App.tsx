@@ -21,9 +21,9 @@ const NAV = [
 const SOCIALS = [
   {
     label: 'YouTube',
-    handle: '@Franklyspeakingshow',
+    handle: 'Frankly Speaking with Pastor Frank Amedia',
     cta: 'Subscribe',
-    href: 'https://www.youtube.com/playlist?list=PLjxZripGCNoRFIX8HQIoufzmXD7Hegavj',
+    href: 'https://www.youtube.com/@TCTTVNet/featured',
     // YouTube play button
     path: 'M21.58 7.19a2.5 2.5 0 0 0-1.76-1.77C18.25 5 12 5 12 5s-6.25 0-7.82.42A2.5 2.5 0 0 0 2.42 7.19 26.2 26.2 0 0 0 2 12a26.2 26.2 0 0 0 .42 4.81 2.5 2.5 0 0 0 1.76 1.77C5.75 19 12 19 12 19s6.25 0 7.82-.42a2.5 2.5 0 0 0 1.76-1.77A26.2 26.2 0 0 0 22 12a26.2 26.2 0 0 0-.42-4.81ZM10 15.13V8.87L15.25 12 10 15.13Z',
   },
