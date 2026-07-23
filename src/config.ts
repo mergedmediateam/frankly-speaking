@@ -7,6 +7,8 @@ export const FORUM_FORM = {
     'https://docs.google.com/forms/d/e/1FAIpQLSdUmwmIOMxgtfuErXF-rNqVIF2ihdEZB5QxdX2VZfd690pz6w/formResponse',
   nameField: 'entry.1567136615',
   emailField: 'entry.474959345',
+  // "Who are you, and why do you want to be on the show?" paragraph question.
+  messageField: 'entry.743505614',
 }
 
 // Partner interest → its own Google Form + Sheet (same recipe, separate list so

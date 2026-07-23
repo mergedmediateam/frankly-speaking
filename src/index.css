@@ -223,3 +223,47 @@ body {
 .social-tile:hover .social-tile-icon {
   filter: drop-shadow(0 0 22px rgba(59, 139, 255, 0.55));
 }
+
+/* --- Be On The Show: guest showcase motion --- */
+@keyframes kenburns {
+  0% { transform: scale(1.02); }
+  100% { transform: scale(1.12) translate3d(-1.2%, 0.8%, 0); }
+}
+.kenburns { animation: kenburns 6.5s ease-out both; }
+.kenburns-slow { animation: kenburns 14s ease-in-out infinite alternate; }
+
+@keyframes spotlight-caption-in {
+  0% { opacity: 0; transform: translateY(14px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.spotlight-caption { animation: spotlight-caption-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* --- Be On The Show title shimmer --- */
+@keyframes title-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: 0% 0; }
+}
+.title-shimmer-blue {
+  background-image: linear-gradient(
+    105deg,
+    #3b8bff 0%,
+    #3b8bff 34%,
+    #bcd6ff 46%,
+    #ffffff 50%,
+    #bcd6ff 54%,
+    #3b8bff 66%,
+    #3b8bff 100%
+  );
+  background-size: 260% 100%;
+  background-position: 100% 0;
+  padding: 0.06em 0.1em 0.12em;
+  margin: -0.06em -0.1em -0.12em;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: title-shimmer 5s ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .title-shimmer-blue { animation: none; color: var(--color-blue-bright); background: none; }
+}

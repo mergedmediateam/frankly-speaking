@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
+import { motion, useScroll, useTransform, useReducedMotion } from 'motion/react'
 import playlist from './data/videos.json'
 import { FORUM_FORM, PARTNER_FORM } from './config'
 
@@ -671,61 +672,260 @@ function SeriesPage() {
   )
 }
 
-/* Guests featured on the broadcast — shown on Beyond the Show.
-   episodeId (optional) links the card to that conversation and provides the
-   photo fallback (episode thumbnail) when no dedicated photo exists. */
-type Guest = { name: string; title: string; photo?: string; episodeId?: string }
+/* Guests featured on the broadcast — shown on Be On The Show.
+   Order = showcase order top to bottom (Alvar's ranking). First 6 are the
+   headliners (bigger frames). Photos are 16:9 recreations of each guest's
+   portrait in public/images/guests/. episodeId links to the conversation
+   when one exists in the playlist. */
+type Guest = { name: string; title: string; photo: string; episodeId?: string; bgPos?: string }
 
-const GUESTS: Guest[] = []
+const GUESTS: Guest[] = [
+  { name: 'Amb. Yechiel Leiter', title: "Israel's Ambassador to the United States", photo: '/images/guests/yechiel.jpg', episodeId: 'i6e1ox0d0B8' },
+  { name: 'Gordon Robertson', title: 'CEO, The Christian Broadcasting Network', photo: '/images/guests/gordon.jpg', episodeId: 'rUO6zm7j_mg' },
+  { name: 'Yair Pinto', title: 'Host, TBN Israel · Captain (Res.), IDF', photo: '/images/guests/yair.jpg', episodeId: 'CHMLd7nE5mE' },
+  { name: 'Dr. Alveda King', title: 'Evangelist · Niece of Dr. Martin Luther King Jr.', photo: '/images/guests/alveda.jpg', episodeId: '0C69gRQvxwM' },
+  { name: 'Jentezen Franklin', title: 'Senior Pastor, Free Chapel', photo: '/images/guests/jentezen.jpg', episodeId: 'TzNazFzbvvk' },
+  { name: 'Mati Shoshani', title: 'Director of Operations, TBN Israel', photo: '/images/guests/mati.jpg', episodeId: 'TeQYRgEmfNg' },
+  { name: 'Allen Jackson', title: 'Senior Pastor, World Outreach Church', photo: '/images/guests/allen.jpg', episodeId: 'r1hX2EuVxOM' },
+  { name: 'Samuel Smadja', title: 'Founder, Sar-El Tours · Director, TBN Israel', photo: '/images/guests/samuel.jpg', episodeId: 'ZwOhUv13un4' },
+  { name: 'Troy Miller', title: 'President & CEO, National Religious Broadcasters', photo: '/images/guests/troy.jpg', episodeId: 'ImUE5c7HkA8' },
+  { name: 'Lou Engle', title: 'Co-founder, TheCall', photo: '/images/guests/lou.jpg', episodeId: 'RbsxiQ4k5_I' },
+  { name: 'Nick Hall', title: 'Founder & Chief Evangelist, Pulse', photo: '/images/guests/nick.jpg', episodeId: 'pnq5M527eL4' },
+  { name: 'Dr. Erez Soref', title: 'President, ONE FOR ISRAEL', photo: '/images/guests/erez.jpg', episodeId: 'g3qrH9NRrsU', bgPos: '50% 8%' },
+]
 
-function GuestCard({ g }: { g: Guest }) {
-  const img = g.photo ?? (g.episodeId ? `https://i.ytimg.com/vi/${g.episodeId}/hqdefault.jpg` : null)
-  const inner = (
-    <>
-      <div className="relative aspect-[4/5] rounded-lg overflow-hidden border border-line bg-ink-soft transition-[transform,box-shadow,border-color] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:-translate-y-1.5 group-hover:border-blue/40 group-hover:shadow-[0_24px_60px_-24px_rgba(31,111,229,0.6)]">
-        {img ? (
-          <img
-            src={img}
-            alt={g.name}
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110"
-          />
-        ) : (
-          <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-blue-deep/40 via-ink-soft to-ink">
-            <span className="font-display text-5xl text-bone/30">
-              {g.name
-                .split(' ')
-                .map((w) => w[0])
-                .slice(0, 2)
-                .join('')}
-            </span>
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-ink/80 via-transparent to-transparent" />
-      </div>
-      <h3 className="mt-4 font-display text-xl tracking-tight text-bone group-hover:text-white transition-colors">
-        {g.name}
-      </h3>
-      <p className="mt-1 text-sm text-bone/60 leading-snug">{g.title}</p>
-      {g.episodeId && (
-        <span className="mt-3 inline-block kicker text-blue-bright opacity-80 group-hover:opacity-100 transition-opacity">
-          Watch the conversation →
+const SHOW_EASE = [0.22, 1, 0.36, 1] as const
+
+/* Centered page title — broadcast-grade motion-graphic entrance:
+   ghost outline zooms in behind, blue glow blooms, heavy bold characters
+   cascade out of masks ("THE SHOW" in blue), rules draw outward, then a
+   shimmer sweeps the blue words forever. */
+function ShowTitle() {
+  const reduced = useReducedMotion()
+  const [settled, setSettled] = useState(false)
+  useEffect(() => {
+    const t = window.setTimeout(() => setSettled(true), reduced ? 0 : 1900)
+    return () => window.clearTimeout(t)
+  }, [reduced])
+
+  const CHAR_BASE = 0.4
+  const renderWord = (word: string, blue: boolean, charOffset: number) => (
+    <span className="inline-block whitespace-nowrap">
+      {word.split('').map((c, i) => (
+        <span key={i} className="inline-block overflow-hidden align-top pb-[0.12em] -mb-[0.12em]">
+          <motion.span
+            className={`inline-block ${blue ? 'text-blue-bright' : 'text-white'}`}
+            initial={reduced ? false : { y: '118%', rotate: 7, scale: 1.12 }}
+            animate={{ y: '0%', rotate: 0, scale: 1 }}
+            transition={{ duration: 0.85, ease: SHOW_EASE, delay: CHAR_BASE + (charOffset + i) * 0.045 }}
+          >
+            {c}
+          </motion.span>
         </span>
-      )}
-    </>
+      ))}
+    </span>
   )
-  return g.episodeId ? (
-    <a href={`#/watch/${g.episodeId}`} className="group block">
-      {inner}
-    </a>
-  ) : (
-    <div className="group">{inner}</div>
+
+  return (
+    <div className="relative text-center pt-8 pb-4">
+      {/* ghost outline title — depth layer zooming in behind everything */}
+      <motion.span
+        aria-hidden="true"
+        className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-black uppercase tracking-tight leading-none text-[clamp(5rem,17vw,13rem)] select-none pointer-events-none"
+        style={{ WebkitTextStroke: '1.5px rgba(59,139,255,0.14)', color: 'transparent' }}
+        initial={reduced ? false : { opacity: 0, scale: 2.1 }}
+        animate={{ opacity: 1, scale: 1.42 }}
+        transition={{ duration: 1.8, ease: SHOW_EASE, delay: 0.15 }}
+      >
+        BE ON THE SHOW
+      </motion.span>
+
+      {/* blue glow bloom */}
+      <motion.div
+        aria-hidden="true"
+        className="absolute left-1/2 top-[46%] -translate-x-1/2 -translate-y-1/2 w-[76vw] h-[46vh] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse at center, rgba(31,111,229,0.3), transparent 62%)' }}
+        initial={reduced ? false : { opacity: 0, scale: 0.55 }}
+        animate={{ opacity: 0.9, scale: 1 }}
+        transition={{ duration: 1.6, ease: 'easeOut', delay: 0.6 }}
+      />
+
+      {/* kicker with rules drawing outward */}
+      <div className="relative flex items-center justify-center gap-4">
+        <motion.span
+          aria-hidden="true"
+          className="h-px w-14 md:w-24 bg-gradient-to-l from-blue-bright/70 to-transparent origin-right"
+          initial={reduced ? false : { scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.7, ease: SHOW_EASE, delay: 0.9 }}
+        />
+        <motion.span
+          className="kicker text-blue-bright inline-block"
+          initial={reduced ? false : { opacity: 0, letterSpacing: '0.7em' }}
+          animate={{ opacity: 1, letterSpacing: '0.32em' }}
+          transition={{ duration: 1.0, ease: SHOW_EASE, delay: 0.35 }}
+        >
+          Join the broadcast
+        </motion.span>
+        <motion.span
+          aria-hidden="true"
+          className="h-px w-14 md:w-24 bg-gradient-to-r from-blue-bright/70 to-transparent origin-left"
+          initial={reduced ? false : { scaleX: 0 }}
+          animate={{ scaleX: 1 }}
+          transition={{ duration: 0.7, ease: SHOW_EASE, delay: 0.9 }}
+        />
+      </div>
+
+      {/* the title */}
+      <h1
+        className="relative mt-5 font-black uppercase tracking-tight leading-[0.94] text-[clamp(2.8rem,9.5vw,8rem)] drop-shadow-[0_0_46px_rgba(31,111,229,0.45)]"
+        aria-label="Be On The Show"
+      >
+        {settled ? (
+          <span aria-hidden="true">
+            <span className="text-white">BE ON</span>{' '}
+            <span className="title-shimmer-blue">THE SHOW</span>
+          </span>
+        ) : (
+          <span aria-hidden="true">
+            {renderWord('BE', false, 0)} {renderWord('ON', false, 2)} {renderWord('THE', true, 4)}{' '}
+            {renderWord('SHOW', true, 7)}
+          </span>
+        )}
+      </h1>
+
+      {/* underline draw */}
+      <motion.div
+        aria-hidden="true"
+        className="mx-auto mt-7 h-[2px] w-[min(420px,60vw)] bg-gradient-to-r from-transparent via-blue-bright/80 to-transparent"
+        initial={reduced ? false : { scaleX: 0, opacity: 0 }}
+        animate={{ scaleX: 1, opacity: 1 }}
+        transition={{ duration: 0.9, ease: SHOW_EASE, delay: 1.25 }}
+      />
+
+      <motion.p
+        className="mt-7 max-w-xl mx-auto text-bone/65 leading-relaxed"
+        initial={reduced ? false : { opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 1.45 }}
+      >
+        The guests who've joined Frank at the desk — and how you can be next.
+      </motion.p>
+    </div>
+  )
+}
+
+/* One floating portrait in the gallery. Zigzag: even index = frame-left,
+   odd = frame-right. No frames, no borders — each photo melts into the ink
+   background through a feathered opacity mask, with the guest's name laid
+   over the lower part of the image. Per-image parallax + idle drift. */
+const PARALLAX_SPEEDS = [70, 115, 55, 95, 65, 125]
+
+/* Cutout of the guest (background removed) — same 16:9 canvas as the photo. */
+const cutSrc = (photo: string) => photo.replace('/guests/', '/guests/cut/').replace('.jpg', '.png')
+
+function FloatingGuest({ g, index }: { g: Guest; index: number }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const reduced = useReducedMotion()
+  const featured = index < 6
+  const left = index % 2 === 0
+  const speed = PARALLAX_SPEEDS[index % PARALLAX_SPEEDS.length]
+  const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] })
+  const y = useTransform(scrollYProgress, [0, 1], reduced ? [0, 0] : [speed, -speed])
+
+  const BAND_MASK =
+    'linear-gradient(to bottom, transparent 0%, black 28%, black 68%, transparent 100%)'
+  const PERSON_MASK =
+    'linear-gradient(to bottom, black 0%, black 84%, transparent 99%)'
+
+  const inner = (
+    <div className="relative h-full">
+      {/* full-bleed blue scene — no frame, melts into the ink above and below
+          so consecutive guests crossfade into each other */}
+      <div className="absolute inset-0" style={{ maskImage: BAND_MASK, WebkitMaskImage: BAND_MASK }}>
+        <img
+          src={g.photo}
+          alt=""
+          aria-hidden="true"
+          loading={index === 0 ? 'eager' : 'lazy'}
+          style={{ objectPosition: g.bgPos ?? '50% 22%' }}
+          className="absolute inset-0 w-full h-full object-cover grayscale"
+        />
+        <div className="absolute inset-0 bg-[#2135d6] mix-blend-color" />
+        <div className="absolute inset-0 bg-[#101c66]/60 mix-blend-multiply" />
+      </div>
+
+      {/* the guest — floating free over the scene, never clipped */}
+      <motion.div
+        style={{ y }}
+        className={`absolute bottom-[12%] ${left ? 'left-[6%] md:left-[11%]' : 'right-[6%] md:right-[11%]'} h-[62%] md:h-[68%]`}
+      >
+        <motion.div
+          className="relative h-full"
+          animate={reduced ? undefined : { y: [0, -10, 0] }}
+          transition={reduced ? undefined : { duration: 6.5 + (index % 3) * 1.4, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <img
+            src={cutSrc(g.photo)}
+            alt={g.name}
+            loading={index === 0 ? 'eager' : 'lazy'}
+            style={{ maskImage: PERSON_MASK, WebkitMaskImage: PERSON_MASK }}
+            className="h-full w-auto max-w-[92vw] object-contain origin-bottom transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.06] hover:-translate-y-2"
+          />
+        </motion.div>
+      </motion.div>
+
+      {/* name — in the negative space on the opposite side of the guest,
+          vertically centered, clear of the echo face */}
+      <div
+        className={`absolute top-[56%] -translate-y-1/2 ${
+          left ? 'right-[3%] md:right-[6%]' : 'left-[3%] md:left-[6%]'
+        } w-[52%] md:w-[40%] text-center pointer-events-none`}
+      >
+        <h3
+          className={`font-black uppercase tracking-tight leading-[0.95] text-white drop-shadow-[0_4px_30px_rgba(7,10,17,0.9)] ${
+            featured ? 'text-4xl md:text-7xl' : 'text-3xl md:text-5xl'
+          }`}
+        >
+          {g.name}
+        </h3>
+        <p className="mt-4 text-xs md:text-base uppercase tracking-[0.26em] text-white/90 drop-shadow-[0_1px_14px_rgba(7,10,17,0.95)]">
+          {g.title}
+        </p>
+        {g.episodeId && (
+          <a
+            href={`#/watch/${g.episodeId}`}
+            className="pointer-events-auto mt-6 inline-block px-7 py-3.5 rounded-full border border-blue-bright/60 bg-blue/25 backdrop-blur-sm font-mono text-[0.72rem] md:text-[0.8rem] uppercase tracking-[0.22em] text-white hover:bg-blue-bright hover:border-blue-bright hover:shadow-[0_10px_36px_-8px_rgba(59,139,255,0.8)] transition-[background-color,border-color,box-shadow,transform] active:scale-[0.97]"
+          >
+            Watch the conversation →
+          </a>
+        )}
+      </div>
+    </div>
+  )
+
+  return (
+    <div
+      ref={ref}
+      className={`relative left-1/2 -translate-x-1/2 w-screen h-[62vh] md:h-[94vh] ${index === 0 ? '' : '-mt-[8vh] md:-mt-[10vh]'}`}
+    >
+      <motion.div
+        className="h-full"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 1.4, ease: 'easeOut' }}
+      >
+        <div className="h-full">{inner}</div>
+      </motion.div>
+    </div>
   )
 }
 
 function BeyondPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
   const [status, setStatus] = useState<'idle' | 'loading' | 'done' | 'error'>('idle')
 
   async function submit(e: React.FormEvent) {
@@ -737,6 +937,7 @@ function BeyondPage() {
       const body = new URLSearchParams()
       body.append(FORUM_FORM.nameField, name)
       body.append(FORUM_FORM.emailField, email)
+      if (FORUM_FORM.messageField && message) body.append(FORUM_FORM.messageField, message)
       await fetch(FORUM_FORM.action, {
         method: 'POST',
         mode: 'no-cors',
@@ -750,94 +951,182 @@ function BeyondPage() {
   }
 
   return (
-    <main className="min-h-[calc(100svh-104px)]">
+    <main className="min-h-[calc(100svh-104px)] overflow-x-clip">
       <div className="mx-auto max-w-[1400px] px-6 pt-14">
-        <PageHeader
-          kicker="Join the broadcast"
-          title="Be On The Show"
-          sub="The guests who've joined Frank at the desk — and how you can be next."
-        />
+        <ShowTitle />
 
-        {GUESTS.length > 0 && (
-          <div className="pb-8">
-            <div className="flex items-end justify-between gap-6 mb-8" data-reveal style={{ transform: 'translateY(24px)' }}>
-              <div>
-                <span className="kicker text-blue-bright">On the show</span>
-                <h2 className="mt-2 font-display text-2xl md:text-3xl tracking-tight">The guests</h2>
-              </div>
-            </div>
-            <div data-grid className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
-              {GUESTS.map((g) => (
-                <GuestCard key={g.name} g={g} />
-              ))}
-            </div>
+        <div className="mt-20 md:mt-32">
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ duration: 0.8, ease: SHOW_EASE }}
+          >
+            <span className="kicker text-blue-bright">On the show</span>
+            <h2 className="mt-4 font-display text-3xl md:text-[3.4rem] md:leading-[1.08] tracking-tight max-w-3xl mx-auto">
+              These are some of the guests who've joined Frank at the desk.
+            </h2>
+          </motion.div>
+
+          <div className="relative mt-6 md:mt-10 pb-24 md:pb-40">
+            {GUESTS.map((g, i) => (
+              <FloatingGuest key={g.name} g={g} index={i} />
+            ))}
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="border-t border-line mt-8">
-      <div className="mx-auto max-w-[1400px] px-6 py-24 text-center" data-reveal style={{ transform: 'translateY(28px)' }}>
-        <span className="kicker text-blue-bright">Your turn</span>
-        <h1 className="mt-5 font-display text-[clamp(2.2rem,5vw,4rem)] leading-[0.98] tracking-tight">
-          Want to be <span className="italic">on the show?</span>
-        </h1>
-        <p className="mt-6 max-w-xl mx-auto text-bone/65 leading-relaxed">
-          Leave your details — the team reviews every request and reaches out
-          about joining Frank on the broadcast.
-        </p>
+      <div className="relative border-t border-line mt-8 overflow-hidden">
+        {/* gradient stage behind the finale */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 60% at 50% 42%, rgba(31,111,229,0.22), transparent 65%), linear-gradient(to bottom, transparent 0%, rgba(12,63,150,0.12) 45%, transparent 100%)',
+          }}
+        />
+        {/* ghost outline behind the finale title */}
+        <motion.span
+          aria-hidden="true"
+          className="absolute left-1/2 top-[26%] -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-black uppercase tracking-tight leading-none text-[clamp(4rem,14vw,11rem)] select-none pointer-events-none"
+          style={{ WebkitTextStroke: '1.5px rgba(59,139,255,0.12)', color: 'transparent' }}
+          initial={{ opacity: 0, scale: 1.9 }}
+          whileInView={{ opacity: 1, scale: 1.35 }}
+          viewport={{ once: true, amount: 0.4 }}
+          transition={{ duration: 1.6, ease: SHOW_EASE }}
+        >
+          YOUR TURN
+        </motion.span>
 
-        {status === 'done' ? (
-          <div className="mt-12 max-w-md mx-auto" aria-live="polite">
-            <div className="mx-auto grid place-items-center w-16 h-16 rounded-full bg-blue/15 border border-blue-bright/40">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue-bright)" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
-            </div>
-            <h2 className="mt-6 font-display text-2xl tracking-tight">You're on the list.</h2>
-            <p className="mt-3 text-bone/65">
-              Watch your inbox — the team will be in touch about joining the show.
-            </p>
-          </div>
-        ) : (
-          <form
-            className="mt-10 max-w-md mx-auto flex flex-col gap-3"
-            onSubmit={submit}
-            aria-live="polite"
-          >
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              autoComplete="name"
-              className="w-full bg-transparent px-6 py-4 rounded-full border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright transition-colors"
+        <div className="relative mx-auto max-w-[1400px] px-6 py-28 text-center">
+          <div className="flex items-center justify-center gap-4">
+            <motion.span
+              aria-hidden="true"
+              className="h-px w-14 md:w-24 bg-gradient-to-l from-blue-bright/70 to-transparent origin-right"
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, ease: SHOW_EASE, delay: 0.45 }}
             />
-            <div className="flex border border-line rounded-full overflow-hidden focus-within:border-blue-bright transition-colors">
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@email.com"
-                autoComplete="email"
-                className="flex-1 bg-transparent px-6 py-4 text-bone placeholder:text-slate outline-none"
+            <motion.span
+              className="kicker text-blue-bright inline-block"
+              initial={{ opacity: 0, letterSpacing: '0.7em' }}
+              whileInView={{ opacity: 1, letterSpacing: '0.32em' }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.0, ease: SHOW_EASE, delay: 0.1 }}
+            >
+              Your turn
+            </motion.span>
+            <motion.span
+              aria-hidden="true"
+              className="h-px w-14 md:w-24 bg-gradient-to-r from-blue-bright/70 to-transparent origin-left"
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, ease: SHOW_EASE, delay: 0.45 }}
+            />
+          </div>
+
+          <h1
+            className="mt-6 font-black uppercase tracking-tight leading-[0.95] text-[clamp(2.4rem,7vw,5.6rem)] drop-shadow-[0_0_40px_rgba(31,111,229,0.4)]"
+            aria-label="Want to be on the show?"
+          >
+            <motion.span
+              className="inline-block text-white"
+              initial={{ opacity: 0, y: 46 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: SHOW_EASE, delay: 0.15 }}
+            >
+              WANT TO BE
+            </motion.span>{' '}
+            <motion.span
+              className="inline-block title-shimmer-blue"
+              initial={{ opacity: 0, y: 46 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: SHOW_EASE, delay: 0.3 }}
+            >
+              ON THE SHOW?
+            </motion.span>
+          </h1>
+
+          <motion.p
+            className="mt-7 max-w-xl mx-auto text-bone/65 leading-relaxed"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: SHOW_EASE, delay: 0.5 }}
+          >
+            Tell us who you are and what you'd bring to the desk — the team
+            reviews every request and reaches out.
+          </motion.p>
+
+          {status === 'done' ? (
+            <div className="mt-12 max-w-md mx-auto" aria-live="polite">
+              <div className="mx-auto grid place-items-center w-16 h-16 rounded-full bg-blue/15 border border-blue-bright/40">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue-bright)" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
+              </div>
+              <h2 className="mt-6 font-display text-2xl tracking-tight">You're on the list.</h2>
+              <p className="mt-3 text-bone/65">
+                Watch your inbox — the team will be in touch about joining the show.
+              </p>
+            </div>
+          ) : (
+            <motion.form
+              className="mt-11 max-w-lg mx-auto flex flex-col gap-3 text-left"
+              onSubmit={submit}
+              aria-live="polite"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.9, ease: SHOW_EASE, delay: 0.65 }}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  autoComplete="name"
+                  className="w-full bg-ink-soft/60 backdrop-blur px-6 py-4 rounded-full border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright focus:shadow-[0_0_0_3px_rgba(59,139,255,0.15)] transition-[border-color,box-shadow]"
+                />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@email.com"
+                  autoComplete="email"
+                  className="w-full bg-ink-soft/60 backdrop-blur px-6 py-4 rounded-full border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright focus:shadow-[0_0_0_3px_rgba(59,139,255,0.15)] transition-[border-color,box-shadow]"
+                />
+              </div>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                rows={5}
+                placeholder="Who are you, and why do you want to be on the show? What would you talk about with Frank?"
+                className="w-full resize-none bg-ink-soft/60 backdrop-blur px-6 py-4 rounded-3xl border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright focus:shadow-[0_0_0_3px_rgba(59,139,255,0.15)] transition-[border-color,box-shadow] leading-relaxed"
               />
               <button
                 type="submit"
                 disabled={status === 'loading'}
-                className="bg-blue text-white px-7 font-medium hover:bg-blue-bright transition-[background-color,transform] active:scale-95 disabled:opacity-60"
+                className="mt-1 w-full bg-blue text-white px-7 py-4 rounded-full font-semibold tracking-wide uppercase hover:bg-blue-bright hover:shadow-[0_10px_40px_-10px_rgba(59,139,255,0.7)] transition-[background-color,box-shadow,transform] active:scale-[0.98] disabled:opacity-60"
               >
-                {status === 'loading' ? '…' : 'Apply'}
+                {status === 'loading' ? 'Sending…' : 'Apply to be on the show'}
               </button>
-            </div>
-            {status === 'error' && (
-              <p className="text-sm text-red-400">Something went wrong — please try again.</p>
-            )}
-          </form>
-        )}
+              {status === 'error' && (
+                <p className="text-sm text-red-400 text-center">Something went wrong — please try again.</p>
+              )}
+            </motion.form>
+          )}
 
-        <p className="mt-8 font-mono text-xs text-slate">
-          TOUCH HEAVEN MINISTRIES · DEEP CALLS 2 DEEP UNIVERSITY
-        </p>
-      </div>
+          <p className="mt-10 font-mono text-xs text-slate">
+            TOUCH HEAVEN MINISTRIES · DEEP CALLS 2 DEEP UNIVERSITY
+          </p>
+        </div>
       </div>
     </main>
   )
@@ -992,27 +1281,20 @@ function AboutPage() {
   )
 }
 
+/* Episodes that live on the TCT channel but not in the site playlist
+   (linked from the guest showcase). */
+const EXTRA_EPISODES: Record<string, string> = {
+  TzNazFzbvvk: 'Why Jentezen Franklin Gave $28 Million to Israel | Frankly Speaking Pt 1',
+  CHMLd7nE5mE: 'Pastor Frank Amedia with Jentezen Franklin and Yair Pinto | Frankly Speaking Pt 2',
+}
+
 function EpisodeViewer({ id }: { id: string }) {
   const idx = VIDEOS.findIndex((v) => v.id === id)
-  const v = VIDEOS[idx]
+  const known = VIDEOS[idx]
+  const v = known ?? { id, title: EXTRA_EPISODES[id] ?? 'Frankly Speaking', duration: 0 }
 
-  if (!v) {
-    return (
-      <main className="min-h-[calc(100svh-104px)] mx-auto max-w-[900px] px-6 py-32 text-center">
-        <span className="kicker text-blue-bright">Not found</span>
-        <h1 className="mt-4 font-display text-4xl tracking-tight">This episode is unavailable</h1>
-        <a
-          href="#/dispatches"
-          className="mt-8 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-bone text-ink font-medium hover:bg-white transition-colors"
-        >
-          ← Back to dispatches
-        </a>
-      </main>
-    )
-  }
-
-  const newer = VIDEOS[idx - 1]
-  const older = VIDEOS[idx + 1]
+  const newer = known ? VIDEOS[idx - 1] : undefined
+  const older = known ? VIDEOS[idx + 1] : undefined
   const more = VIDEOS.filter((x) => x.id !== id).slice(0, 12)
 
   return (
