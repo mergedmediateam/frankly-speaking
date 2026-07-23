@@ -23,7 +23,7 @@ const SOCIALS = [
     label: 'YouTube',
     handle: '@Franklyspeakingshow',
     cta: 'Subscribe',
-    href: 'https://www.youtube.com/@Franklyspeakingshow',
+    href: 'https://www.youtube.com/playlist?list=PLjxZripGCNoRFIX8HQIoufzmXD7Hegavj',
     // YouTube play button
     path: 'M21.58 7.19a2.5 2.5 0 0 0-1.76-1.77C18.25 5 12 5 12 5s-6.25 0-7.82.42A2.5 2.5 0 0 0 2.42 7.19 26.2 26.2 0 0 0 2 12a26.2 26.2 0 0 0 .42 4.81 2.5 2.5 0 0 0 1.76 1.77C5.75 19 12 19 12 19s6.25 0 7.82-.42a2.5 2.5 0 0 0 1.76-1.77A26.2 26.2 0 0 0 22 12a26.2 26.2 0 0 0-.42-4.81ZM10 15.13V8.87L15.25 12 10 15.13Z',
   },
@@ -1260,6 +1260,27 @@ function SponsorBackdrop() {
 
   return (
     <div aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* ghost title — materializes, holds, dissolves, and regenerates forever */}
+      <motion.span
+        className="absolute left-1/2 top-[40%] whitespace-nowrap font-black uppercase tracking-tight leading-none text-[clamp(4rem,13vw,10.5rem)] select-none"
+        style={{ x: '-50%', y: '-50%', WebkitTextStroke: '1.5px rgba(59,139,255,0.17)', color: 'transparent' }}
+        animate={
+          reduced
+            ? { opacity: 0.6 }
+            : {
+                opacity: [0, 0.9, 0.9, 0],
+                scale: [1.04, 1.12, 1.17, 1.27],
+                filter: ['blur(10px)', 'blur(0px)', 'blur(0px)', 'blur(14px)'],
+              }
+        }
+        transition={
+          reduced
+            ? undefined
+            : { duration: 9, times: [0, 0.26, 0.64, 1], repeat: Infinity, repeatDelay: 1.6, ease: 'easeInOut' }
+        }
+      >
+        BECOME A SPONSOR
+      </motion.span>
       {SPONSOR_BACKDROP.map((it, i) => (
         <BackdropFloat key={i} it={it} smx={smx} smy={smy} reduced={reduced} />
       ))}
