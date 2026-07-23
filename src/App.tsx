@@ -1671,14 +1671,102 @@ function PartnerPage() {
 
 function AboutPage() {
   return (
-    <main className="min-h-[calc(100svh-104px)]">
-      <div className="mx-auto max-w-[1400px] px-6 pt-14 pb-24">
-        <PageHeader kicker="The Host" title="Frank Amedia" />
-        <div className="grid lg:grid-cols-12 gap-12 items-start">
-          <div className="lg:col-span-6" data-reveal style={{ transform: 'translateY(28px)' }}>
-            <Photo label="Frank Amedia" src="/images/host.jpg" imgClassName="object-top" className="aspect-[4/3] w-full" />
+    <main className="min-h-[calc(100svh-104px)] overflow-x-clip">
+      {/* split hero: the blue studio scene owns the left half full-bleed and
+          darkens toward the right so the text column stays readable */}
+      <section className="relative left-1/2 -translate-x-1/2 w-screen">
+        {/* scene — dominant, frameless, fading into the ink */}
+        <div
+          className="relative h-[52vh] md:absolute md:inset-y-0 md:left-0 md:h-auto md:w-[64%]"
+          style={{
+            maskImage: 'linear-gradient(to right, black 0%, black 52%, transparent 97%)',
+            WebkitMaskImage: 'linear-gradient(to right, black 0%, black 52%, transparent 97%)',
+          }}
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 86%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 86%, transparent 100%)',
+            }}
+          >
+            <img
+              src="/images/host.jpg"
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover object-[30%_top] grayscale"
+            />
+            <div className="absolute inset-0 bg-[#2135d6] mix-blend-color" />
+            <div className="absolute inset-0 bg-[#101c66]/60 mix-blend-multiply" />
           </div>
-          <div className="lg:col-span-6 space-y-6 text-bone/75 leading-relaxed text-lg" data-reveal style={{ transform: 'translateY(28px)' }}>
+          {/* Frank — full color, floating over his own blue echo */}
+          <motion.img
+            src="/images/guests/cut/frank.png"
+            alt="Frank Amedia"
+            style={{
+              maskImage: 'linear-gradient(to bottom, black 0%, black 84%, transparent 99%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 84%, transparent 99%)',
+            }}
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 md:left-[34%] h-[88%] md:h-[82%] w-auto max-w-none object-contain transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.04] hover:-translate-y-1"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.1, ease: SHOW_EASE, delay: 0.3 }}
+          />
+        </div>
+
+        {/* text column — right half */}
+        <div className="relative z-10 mx-auto max-w-[1400px] px-6 py-14 md:py-0 md:min-h-[86vh] md:flex md:items-center">
+          <div className="md:ml-[56%] md:w-[44%] lg:ml-[58%] lg:w-[40%]">
+            <motion.div
+              className="flex items-center gap-4"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: SHOW_EASE, delay: 0.1 }}
+            >
+              <span aria-hidden="true" className="h-px w-12 bg-gradient-to-r from-blue-bright/80 to-transparent" />
+              <span className="kicker text-blue-bright">The Host</span>
+            </motion.div>
+
+            <h1
+              className="mt-4 font-black uppercase tracking-tight leading-[0.94] text-[clamp(2.6rem,5.6vw,5.2rem)] drop-shadow-[0_0_38px_rgba(31,111,229,0.4)]"
+              aria-label="Frank Amedia"
+            >
+              <span className="inline-block overflow-hidden align-top pb-[0.1em] -mb-[0.1em]" aria-hidden="true">
+                <motion.span
+                  className="inline-block text-white"
+                  initial={{ y: '112%', rotate: 4 }}
+                  animate={{ y: '0%', rotate: 0 }}
+                  transition={{ duration: 0.85, ease: SHOW_EASE, delay: 0.25 }}
+                >
+                  FRANK&nbsp;
+                </motion.span>
+              </span>
+              <span className="inline-block overflow-hidden align-top pb-[0.1em] -mb-[0.1em]" aria-hidden="true">
+                <motion.span
+                  className="inline-block title-shimmer-blue"
+                  initial={{ y: '112%', rotate: 4 }}
+                  animate={{ y: '0%', rotate: 0 }}
+                  transition={{ duration: 0.85, ease: SHOW_EASE, delay: 0.4 }}
+                >
+                  AMEDIA
+                </motion.span>
+              </span>
+            </h1>
+
+            <motion.div
+              aria-hidden="true"
+              className="mt-5 h-[2px] w-40 md:w-60 bg-gradient-to-r from-blue-bright/80 to-transparent origin-left"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.9, ease: SHOW_EASE, delay: 0.7 }}
+            />
+
+            <motion.div
+              className="mt-8 space-y-6 text-bone/75 leading-relaxed text-lg"
+              initial={{ opacity: 0, y: 22 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, ease: SHOW_EASE, delay: 0.55 }}
+            >
             <p>
               Frank Amedia is an apostolic and prophetic voice who has ministered
               around the world for over forty years. From Touch Heaven Studios in
@@ -1709,9 +1797,10 @@ function AboutPage() {
                 Be On The Show →
               </a>
             </div>
+            </motion.div>
           </div>
         </div>
-      </div>
+      </section>
     </main>
   )
 }
