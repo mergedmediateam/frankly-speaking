@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
@@ -12,7 +13,7 @@ gsap.registerPlugin(ScrollTrigger)
 /* ---------------------------------- DATA ---------------------------------- */
 
 const NAV = [
-  { label: 'Dispatches', href: '#/dispatches' },
+  { label: 'Episodes', href: '#/episodes' },
   { label: 'Series', href: '#/series' },
   { label: 'Be On The Show', href: '#/be-on-the-show' },
   { label: 'About', href: '#/about' },
@@ -442,23 +443,86 @@ function Home() {
         </div>
       </section>
 
-      {/* LATEST DISPATCHES (teaser carousel) */}
-      <section className="border-t border-line">
-        <div className="mx-auto max-w-[1400px] px-6 py-16">
-          <div
-            className="flex items-end justify-between gap-6 mb-4"
-            data-reveal
-            style={{ transform: 'translateY(24px)' }}
-          >
+      {/* LATEST EPISODES (teaser carousel — motion-graphic header, same gallery) */}
+      <section className="relative border-t border-line overflow-hidden">
+        {/* ambient glow accents */}
+        <div
+          aria-hidden="true"
+          className="absolute -top-28 -left-28 w-[440px] h-[440px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(31,111,229,0.15), transparent 70%)' }}
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -bottom-36 right-[-8%] w-[540px] h-[540px] rounded-full pointer-events-none"
+          style={{ background: 'radial-gradient(circle, rgba(12,63,150,0.18), transparent 70%)' }}
+        />
+        <div className="relative mx-auto max-w-[1400px] px-6 py-16">
+          <div className="flex items-end justify-between gap-6 mb-7">
             <div>
-              <span className="kicker text-blue-bright">{playlist.count} episodes</span>
-              <h2 className="mt-3 font-display text-3xl md:text-4xl tracking-tight">
-                Latest broadcasts
-              </h2>
+              <motion.div
+                className="flex items-center gap-3"
+                initial={{ opacity: 0, y: 14 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, ease: SHOW_EASE }}
+              >
+                <span className="relative flex h-2.5 w-2.5" aria-hidden="true">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-bright opacity-60" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-bright" />
+                </span>
+                <span className="kicker text-blue-bright">{playlist.count} episodes</span>
+              </motion.div>
+              {/* whileInView lives on the h2 (unclipped) and drives the masked
+                  spans via variants — a fully-clipped span never "enters view" */}
+              <motion.h2
+                className="mt-3 font-black uppercase tracking-tight leading-[0.95] text-4xl md:text-6xl"
+                aria-label="Latest episodes"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.6 }}
+              >
+                <span className="inline-block overflow-hidden align-top pb-[0.1em] -mb-[0.1em]" aria-hidden="true">
+                  <motion.span
+                    className="inline-block text-white"
+                    variants={{
+                      hidden: { y: '112%' },
+                      visible: { y: '0%', transition: { duration: 0.8, ease: SHOW_EASE, delay: 0.1 } },
+                    }}
+                  >
+                    LATEST&nbsp;
+                  </motion.span>
+                </span>
+                <span className="inline-block overflow-hidden align-top pb-[0.1em] -mb-[0.1em]" aria-hidden="true">
+                  <motion.span
+                    className="inline-block title-shimmer-blue"
+                    variants={{
+                      hidden: { y: '112%' },
+                      visible: { y: '0%', transition: { duration: 0.8, ease: SHOW_EASE, delay: 0.24 } },
+                    }}
+                  >
+                    EPISODES
+                  </motion.span>
+                </span>
+              </motion.h2>
+              <motion.div
+                aria-hidden="true"
+                className="mt-4 h-[2px] w-44 md:w-72 bg-gradient-to-r from-blue-bright/80 to-transparent origin-left"
+                initial={{ scaleX: 0 }}
+                whileInView={{ scaleX: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.9, ease: SHOW_EASE, delay: 0.5 }}
+              />
             </div>
-            <a href="#/dispatches" className="hidden sm:inline kicker text-slate hover:text-bone transition-colors pb-2">
+            <motion.a
+              href="#/episodes"
+              className="hidden sm:inline-block shrink-0 px-6 py-3 rounded-full border border-blue-bright/50 bg-blue/15 kicker !text-[0.75rem] text-blue-bright hover:bg-blue-bright hover:text-white transition-colors mb-1"
+              initial={{ opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.7, ease: SHOW_EASE, delay: 0.4 }}
+            >
               View all →
-            </a>
+            </motion.a>
           </div>
           <div data-reveal style={{ transform: 'translateY(28px)' }}>
             <VideoRow videos={VIDEOS.slice(0, 15)} />
@@ -566,7 +630,7 @@ function Home() {
               Follow the broadcast
             </h2>
             <p className="mt-4 max-w-xl mx-auto text-bone/60 leading-relaxed">
-              New dispatches, clips, and moments from the studio — wherever you
+              New episodes, clips, and moments from the studio — wherever you
               watch.
             </p>
           </div>
@@ -581,20 +645,234 @@ function Home() {
   )
 }
 
+/* --- Episodes: sorting + automatic guest grouping ------------------------
+   Everything derives from the live playlist titles at render time, so the
+   ordering and the guest groups update themselves as new episodes drop. */
+type SortMode = 'newest' | 'oldest' | 'az' | 'guest'
+
+const NAME_STOP = /\s+(?:on|in|at|and|&|ends|reveals|talks?|joins?)\s+/i
+const HONORIFIC = /^(?:Dr|Pastor|Rev|Evangelist|Amb(?:assador)?|Rabbi|Bishop|Capt(?:ain)?|CEO|President|Historian|Author|Prof(?:essor)?)\.?\s+/i
+
+/* Words that disqualify a candidate "first name" — kills false positives
+   like "The Man", "Six Men", "Direct Hit", "Hunting Noah". */
+const NOT_A_NAME =
+  /^(?:the|a|an|this|that|what|why|how|when|where|who|from|inside|after|before|under|behind|beyond|direct|one|two|three|four|five|six|seven|eight|nine|ten|is|was|are|did|does|can|will|his|her|their|our|new|last|first|hidden|hospital|holy|israel|israeli|iran|gaza|jerusalem|breaking|live|report)$/i
+
+function looksLikeName(n: string): boolean {
+  const words = n.trim().split(/\s+/)
+  if (words.length < 2 || words.length > 3) return false
+  if (!words.every((w) => /^[A-Z]/.test(w))) return false
+  if (NOT_A_NAME.test(words[0]) || /ing$/.test(words[0])) return false
+  return true
+}
+
+/* All guests a title belongs to. Known showcase guests can multi-match
+   (a joint episode files under every guest in it); otherwise fall back to
+   extracting one name from the title itself. */
+function guestKeysOf(title: string): string[] {
+  const hits: string[] = []
+  for (const g of GUESTS) {
+    const bare = g.name.replace(/^(?:Amb|Dr)\.\s*/i, '')
+    if (title.includes(bare)) hits.push(bare)
+  }
+  if (hits.length) return hits
+
+  // "… — Name … | Frankly Speaking / Global Dispatch" segment
+  let m = /[—–]\s*([^|—–]+?)\s*\|\s*(?:Frankly Speaking|Global Dispatch)/i.exec(title)
+  if (m) {
+    let n = m[1].trim()
+    n = n.replace(/^[\w.&' ]*?['’]s\s+/, '') // "CBN's Gordon Robertson" → "Gordon Robertson"
+    n = n.split(NAME_STOP)[0]
+    n = n.split(/['’]s\s/)[0]
+    n = n.replace(HONORIFIC, '').replace(HONORIFIC, '').trim()
+    if (looksLikeName(n)) return [n]
+  }
+  // Titles that open with the guest's name ("Alveda King on …", "Lou Engle's …")
+  m = /^(?:Dr\.\s|Pastor\s)?([A-Z][\w.]+\s[A-Z][\w.]+?)(?:['’]s\s|\s+(?:on|in|at|joins?|talks?)\b)/.exec(title)
+  if (m && looksLikeName(m[1])) return [m[1]]
+  return []
+}
+
+const SORT_MODES: { key: SortMode; label: string }[] = [
+  { key: 'newest', label: 'Newest' },
+  { key: 'oldest', label: 'Oldest' },
+  { key: 'az', label: 'A–Z' },
+  { key: 'guest', label: 'By guest' },
+]
+
 function DispatchesPage() {
+  const [mode, setMode] = useState<SortMode>('newest')
+
+  /* scroll-linked atmosphere: the page background drifts from ink through
+     deep blue into turquoise as you descend, and a liquid bar fills with
+     spring physics alongside */
+  const { scrollYProgress } = useScroll()
+  const liquid = useSpring(scrollYProgress, { stiffness: 55, damping: 16, mass: 0.6 })
+  const fillH = useTransform(liquid, (v) => `${Math.max(0, Math.min(1, v)) * 100}%`)
+  const bgColor = useTransform(scrollYProgress, [0, 0.55, 1], ['#070a11', '#0c3f96', '#1487df'])
+
+  /* draggable scrubber — grab the bar and drag to control scroll position/speed.
+     Maps the pointer's y within the track to a target scroll and jumps there;
+     dragging keeps scrubbing. */
+  const trackRef = useRef<HTMLDivElement>(null)
+  const [scrubbing, setScrubbing] = useState(false)
+  const scrubTo = (clientY: number) => {
+    const el = trackRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    const p = Math.max(0, Math.min(1, (clientY - r.top) / r.height))
+    const max = document.documentElement.scrollHeight - window.innerHeight
+    window.scrollTo({ top: p * max })
+  }
+  const onScrubDown = (e: React.PointerEvent) => {
+    e.preventDefault()
+    ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+    setScrubbing(true)
+    scrubTo(e.clientY)
+  }
+  const onScrubMove = (e: React.PointerEvent) => {
+    if (scrubbing) scrubTo(e.clientY)
+  }
+  const endScrub = () => setScrubbing(false)
+
+  const sorted = useMemo(() => {
+    if (mode === 'oldest') return [...VIDEOS].reverse()
+    if (mode === 'az')
+      return [...VIDEOS].sort((a, b) => cleanTitle(a.title).localeCompare(cleanTitle(b.title)))
+    return VIDEOS
+  }, [mode])
+
+  const guestGroups = useMemo(() => {
+    const groups = new Map<string, Video[]>()
+    const rest: Video[] = []
+    for (const v of VIDEOS) {
+      const keys = guestKeysOf(v.title)
+      if (keys.length) {
+        for (const k of keys) {
+          if (!groups.has(k)) groups.set(k, [])
+          groups.get(k)!.push(v)
+        }
+      } else {
+        rest.push(v)
+      }
+    }
+    // insertion order = ordered by each guest's most recent episode (VIDEOS is newest-first)
+    return { groups: [...groups.entries()], rest }
+  }, [])
+
   return (
     <main className="min-h-[calc(100svh-104px)]">
-      <div className="mx-auto max-w-[1400px] px-6 pt-14 pb-24">
+      {/* portal to <body>: the page-transition transform on [data-page] would
+          otherwise break position:fixed for these layers */}
+      {createPortal(
+        <>
+          {/* scroll-tinted backdrop — ink → deep blue → bright azure */}
+          <motion.div
+            aria-hidden="true"
+            className="fixed inset-0 pointer-events-none"
+            style={{ backgroundColor: bgColor, opacity: 0.55, zIndex: -1 }}
+          />
+          {/* liquid scroll progress — springy fill with a glowing droplet head;
+              also a draggable scrubber (wide invisible hit area, grab to scroll) */}
+          <div
+            ref={trackRef}
+            onPointerDown={onScrubDown}
+            onPointerMove={onScrubMove}
+            onPointerUp={endScrub}
+            onPointerCancel={endScrub}
+            className="group hidden md:block fixed right-5 top-1/2 -translate-y-1/2 h-[56vh] z-30 cursor-grab active:cursor-grabbing touch-none select-none"
+            style={{ width: 26 }}
+            role="scrollbar"
+            aria-label="Scroll position — drag to scrub"
+          >
+            {/* the visible rail */}
+            <div className={`absolute left-1/2 -translate-x-1/2 h-full rounded-full bg-white/10 transition-[width] ${scrubbing ? 'w-2.5' : 'w-1.5 group-hover:w-2.5'}`}>
+              <motion.div
+                className="w-full rounded-full bg-gradient-to-b from-blue via-blue-bright to-[#54b4ff] shadow-[0_0_16px_rgba(84,180,255,0.55)]"
+                style={{ height: fillH }}
+              />
+              <motion.div
+                className={`absolute left-1/2 rounded-full bg-[#54b4ff] shadow-[0_0_20px_rgba(84,180,255,0.9)] transition-[width,height] ${scrubbing ? 'w-5 h-5' : 'w-4 h-4'}`}
+                style={{ top: fillH, x: '-50%', y: '-50%' }}
+                animate={scrubbing ? { scale: 1 } : { scale: [1, 1.28, 1] }}
+                transition={scrubbing ? { duration: 0.2 } : { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+              />
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
+
+      <div className="relative mx-auto max-w-[1400px] px-6 pt-14 pb-24">
         <PageHeader
           kicker={`${VIDEOS.length} episodes`}
-          title="Dispatches"
-          sub="Every broadcast — current events and prophecy read through the Kingdom lens, newest first."
+          title="Episodes"
+          sub="Every broadcast — current events and prophecy read through the Kingdom lens."
         />
-        <div data-grid className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
-          {VIDEOS.map((v) => (
-            <VideoTile key={v.id} v={v} />
+
+        {/* sort / grouping controls */}
+        <div className="flex flex-wrap items-center gap-2 -mt-4 mb-10">
+          {SORT_MODES.map((m) => (
+            <button
+              key={m.key}
+              type="button"
+              onClick={() => setMode(m.key)}
+              aria-pressed={mode === m.key}
+              className={`px-5 py-2.5 rounded-full font-mono text-[0.72rem] uppercase tracking-[0.18em] border transition-colors ${
+                mode === m.key
+                  ? 'bg-blue border-blue text-white'
+                  : 'border-line text-bone/60 hover:text-bone hover:border-blue-bright/50'
+              }`}
+            >
+              {m.label}
+            </button>
           ))}
         </div>
+
+        {mode === 'guest' ? (
+          <motion.div key="guest" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: SHOW_EASE }}>
+            {guestGroups.groups.map(([name, eps]) => (
+              <div key={name} className="mb-14">
+                <div className="flex items-baseline gap-4 mb-6">
+                  <h2 className="font-black uppercase tracking-tight text-2xl md:text-3xl text-white">{name}</h2>
+                  <span className="kicker text-blue-bright">
+                    {eps.length} {eps.length === 1 ? 'episode' : 'episodes'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+                  {eps.map((v) => (
+                    <VideoTile key={v.id} v={v} />
+                  ))}
+                </div>
+              </div>
+            ))}
+            {guestGroups.rest.length > 0 && (
+              <div className="mb-14">
+                <div className="flex items-baseline gap-4 mb-6">
+                  <h2 className="font-black uppercase tracking-tight text-2xl md:text-3xl text-white">More broadcasts</h2>
+                  <span className="kicker text-blue-bright">{guestGroups.rest.length} episodes</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
+                  {guestGroups.rest.map((v) => (
+                    <VideoTile key={v.id} v={v} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          <motion.div
+            key={mode}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: SHOW_EASE }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10"
+          >
+            {sorted.map((v) => (
+              <VideoTile key={v.id} v={v} />
+            ))}
+          </motion.div>
+        )}
       </div>
     </main>
   )
@@ -1458,11 +1736,11 @@ function EpisodeViewer({ id }: { id: string }) {
     <main className="min-h-[calc(100svh-104px)]">
       <div className="mx-auto max-w-[1180px] px-6 pt-8 pb-24">
         <a
-          href="#/dispatches"
+          href="#/episodes"
           className="inline-flex items-center gap-2 kicker text-slate hover:text-bone transition-colors"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18l-6-6 6-6" /></svg>
-          All dispatches
+          All episodes
         </a>
 
         <div className="mt-6 relative aspect-video w-full rounded-xl overflow-hidden border border-line bg-black shadow-[0_30px_90px_-30px_rgba(31,111,229,0.5)]">
@@ -1722,7 +2000,7 @@ export default function App() {
   const watchId = watchMatch ? watchMatch[1] : null
   let page: 'home' | 'dispatches' | 'series' | 'beyond' | 'partner' | 'about' | 'watch' = 'home'
   if (watchId) page = 'watch'
-  else if (route.startsWith('#/dispatches')) page = 'dispatches'
+  else if (route.startsWith('#/episodes') || route.startsWith('#/dispatches')) page = 'dispatches'
   else if (route.startsWith('#/series')) page = 'series'
   // "#/beyond" and "#/forum" kept as aliases so old links keep working
   else if (
