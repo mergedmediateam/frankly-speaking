@@ -1201,7 +1201,7 @@ function FloatingGuest({ g, index }: { g: Guest; index: number }) {
   )
 }
 
-function BeyondPage() {
+function ShowApplyForm({ delay = 0 }: { delay?: number }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
@@ -1229,10 +1229,92 @@ function BeyondPage() {
     }
   }
 
+  if (status === 'done') {
+    return (
+      <div className="mt-12 max-w-md mx-auto" aria-live="polite">
+        <div className="mx-auto grid place-items-center w-16 h-16 rounded-full bg-blue/15 border border-blue-bright/40">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue-bright)" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
+        </div>
+        <h2 className="mt-6 font-display text-2xl tracking-tight">You're on the list.</h2>
+        <p className="mt-3 text-bone/65">
+          Watch your inbox — the team will be in touch about joining the show.
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <motion.form
+      className="mt-11 max-w-lg mx-auto flex flex-col gap-3 text-left"
+      onSubmit={submit}
+      aria-live="polite"
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.9, ease: SHOW_EASE, delay }}
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Your name"
+          autoComplete="name"
+          className="w-full bg-ink-soft/60 backdrop-blur px-6 py-4 rounded-full border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright focus:shadow-[0_0_0_3px_rgba(59,139,255,0.15)] transition-[border-color,box-shadow]"
+        />
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@email.com"
+          autoComplete="email"
+          className="w-full bg-ink-soft/60 backdrop-blur px-6 py-4 rounded-full border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright focus:shadow-[0_0_0_3px_rgba(59,139,255,0.15)] transition-[border-color,box-shadow]"
+        />
+      </div>
+      <textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        rows={5}
+        placeholder="Who are you, and why do you want to be on the show? What would you talk about with Frank?"
+        className="w-full resize-none bg-ink-soft/60 backdrop-blur px-6 py-4 rounded-3xl border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright focus:shadow-[0_0_0_3px_rgba(59,139,255,0.15)] transition-[border-color,box-shadow] leading-relaxed"
+      />
+      <button
+        type="submit"
+        disabled={status === 'loading'}
+        className="mt-1 w-full bg-blue text-white px-7 py-4 rounded-full font-semibold tracking-wide uppercase hover:bg-blue-bright hover:shadow-[0_10px_40px_-10px_rgba(59,139,255,0.7)] transition-[background-color,box-shadow,transform] active:scale-[0.98] disabled:opacity-60"
+      >
+        {status === 'loading' ? 'Sending…' : 'Apply to be on the show'}
+      </button>
+      {status === 'error' && (
+        <p className="text-sm text-red-400 text-center">Something went wrong — please try again.</p>
+      )}
+    </motion.form>
+  )
+}
+
+function BeyondPage() {
   return (
     <main className="min-h-[calc(100svh-104px)] overflow-x-clip">
       <div className="mx-auto max-w-[1400px] px-6 pt-14">
         <ShowTitle />
+
+        {/* application form — duplicated at the top, right under the title */}
+        <div className="mt-14 md:mt-20 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.4 }}
+            transition={{ duration: 0.8, ease: SHOW_EASE }}
+          >
+            <span className="kicker text-blue-bright">Apply now</span>
+            <p className="mt-4 max-w-xl mx-auto text-bone/65 leading-relaxed">
+              Tell us who you are and what you'd bring to the desk — the team
+              reviews every request and reaches out.
+            </p>
+          </motion.div>
+          <ShowApplyForm delay={0.2} />
+        </div>
 
         <div className="mt-20 md:mt-32">
           <motion.div
@@ -1343,64 +1425,7 @@ function BeyondPage() {
             reviews every request and reaches out.
           </motion.p>
 
-          {status === 'done' ? (
-            <div className="mt-12 max-w-md mx-auto" aria-live="polite">
-              <div className="mx-auto grid place-items-center w-16 h-16 rounded-full bg-blue/15 border border-blue-bright/40">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue-bright)" strokeWidth="2.5"><path d="M20 6L9 17l-5-5" /></svg>
-              </div>
-              <h2 className="mt-6 font-display text-2xl tracking-tight">You're on the list.</h2>
-              <p className="mt-3 text-bone/65">
-                Watch your inbox — the team will be in touch about joining the show.
-              </p>
-            </div>
-          ) : (
-            <motion.form
-              className="mt-11 max-w-lg mx-auto flex flex-col gap-3 text-left"
-              onSubmit={submit}
-              aria-live="polite"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.9, ease: SHOW_EASE, delay: 0.65 }}
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Your name"
-                  autoComplete="name"
-                  className="w-full bg-ink-soft/60 backdrop-blur px-6 py-4 rounded-full border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright focus:shadow-[0_0_0_3px_rgba(59,139,255,0.15)] transition-[border-color,box-shadow]"
-                />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@email.com"
-                  autoComplete="email"
-                  className="w-full bg-ink-soft/60 backdrop-blur px-6 py-4 rounded-full border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright focus:shadow-[0_0_0_3px_rgba(59,139,255,0.15)] transition-[border-color,box-shadow]"
-                />
-              </div>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                rows={5}
-                placeholder="Who are you, and why do you want to be on the show? What would you talk about with Frank?"
-                className="w-full resize-none bg-ink-soft/60 backdrop-blur px-6 py-4 rounded-3xl border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright focus:shadow-[0_0_0_3px_rgba(59,139,255,0.15)] transition-[border-color,box-shadow] leading-relaxed"
-              />
-              <button
-                type="submit"
-                disabled={status === 'loading'}
-                className="mt-1 w-full bg-blue text-white px-7 py-4 rounded-full font-semibold tracking-wide uppercase hover:bg-blue-bright hover:shadow-[0_10px_40px_-10px_rgba(59,139,255,0.7)] transition-[background-color,box-shadow,transform] active:scale-[0.98] disabled:opacity-60"
-              >
-                {status === 'loading' ? 'Sending…' : 'Apply to be on the show'}
-              </button>
-              {status === 'error' && (
-                <p className="text-sm text-red-400 text-center">Something went wrong — please try again.</p>
-              )}
-            </motion.form>
-          )}
+          <ShowApplyForm delay={0.65} />
 
           <p className="mt-10 font-mono text-xs text-slate">
             TOUCH HEAVEN MINISTRIES · DEEP CALLS 2 DEEP UNIVERSITY
