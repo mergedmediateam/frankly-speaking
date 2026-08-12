@@ -643,6 +643,31 @@ function Home() {
         </div>
       </section>
 
+      {/* QUICK GIVE — one tap straight to Square checkout */}
+      <section className="border-t border-line">
+        <div className="mx-auto max-w-[1400px] px-6 py-16 md:py-20">
+          <div
+            className="grid lg:grid-cols-12 gap-8 items-center"
+            data-reveal
+            style={{ transform: 'translateY(28px)' }}
+          >
+            <div className="lg:col-span-6">
+              <span className="kicker text-blue-bright">Support the broadcast</span>
+              <h2 className="mt-4 font-display text-3xl md:text-5xl tracking-tight leading-[1.04]">
+                Keep it on the air.
+              </h2>
+              <p className="mt-4 max-w-md text-bone/60 leading-relaxed">
+                Frankly Speaking is viewer-funded. One tap — your gift goes
+                straight to work.
+              </p>
+            </div>
+            <div className="lg:col-span-6 lg:justify-self-end">
+              <QuickGive />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* FOLLOW — SOCIAL CHANNELS */}
       <section className="border-t border-line">
         <div className="mx-auto max-w-[1400px] px-6 py-20 md:py-24">
@@ -1790,6 +1815,66 @@ function AmountTile({
     >
       {label}
     </button>
+  )
+}
+
+/* Compact one-tap give strip used on the home page: preset amounts go straight
+   to Square checkout; "Other" opens the full donate page. */
+function QuickGive() {
+  const [busy, setBusy] = useState<number | null>(null)
+  const [error, setError] = useState(false)
+
+  async function give(amount: number) {
+    if (busy != null) return
+    setError(false)
+    setBusy(amount)
+    try {
+      const res = await fetch(DONATE.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ freq: 'once', amount }),
+      })
+      const data = (await res.json().catch(() => ({}))) as { url?: string }
+      if (res.ok && data.url) {
+        window.location.href = data.url
+        return
+      }
+      setError(true)
+    } catch {
+      setError(true)
+    }
+    setBusy(null)
+  }
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center gap-3">
+        {[25, 50, 100].map((a) => (
+          <button
+            key={a}
+            type="button"
+            onClick={() => give(a)}
+            disabled={busy != null}
+            className="min-w-[104px] px-7 py-3.5 rounded-full border border-line font-display text-xl tracking-tight text-bone hover:border-blue-bright hover:text-white hover:scale-[1.04] active:scale-95 transition-[border-color,color,transform] duration-300 disabled:opacity-50"
+          >
+            {busy === a ? '…' : `$${a}`}
+          </button>
+        ))}
+        <a
+          href="#/donate"
+          className="px-7 py-3.5 rounded-full bg-blue text-white font-medium hover:bg-blue-bright hover:scale-[1.04] active:scale-95 transition-[background-color,transform] duration-300"
+        >
+          Other amount →
+        </a>
+      </div>
+      <p className="mt-4 font-mono text-xs text-slate" aria-live="polite">
+        {error
+          ? 'Checkout could not open — please try again.'
+          : busy != null
+            ? 'OPENING SECURE CHECKOUT…'
+            : 'SECURE CHECKOUT BY SQUARE · ONE-TIME GIFT'}
+      </p>
+    </div>
   )
 }
 
