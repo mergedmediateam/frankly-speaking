@@ -24,3 +24,11 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Frankly auto-thumbnail — secrets + local state (never commit to the public repo)
+token.json
+client_secret.json
+alert_config.json
+alerted.json
+work_queue.json
+daily_run.out.log

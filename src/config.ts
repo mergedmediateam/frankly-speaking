@@ -20,3 +20,20 @@ export const PARTNER_FORM = {
   emailField: 'entry.1532441216',
   messageField: 'entry.147624919',
 }
+
+/* --------------------------------- GIVING --------------------------------- */
+// Donations run on Square. The give form POSTs the chosen amount to
+// `/api/donate` (a Vercel serverless function in this repo, see api/donate.ts),
+// which creates a Square-hosted checkout and hands back its URL — same pattern
+// as the WorshipFlow/NCW app, no card data ever touches us.
+//
+// Nothing secret lives here; the token stays in Vercel env vars. See DONATE.md.
+export const DONATE = {
+  endpoint: '/api/donate',
+  oneTimeAmounts: [25, 50, 100, 250, 500],
+  monthlyAmounts: [10, 25, 50, 100, 250],
+  // Shown under the give form. Keep legally accurate — update once the client
+  // confirms the receiving entity + tax status.
+  receiptNote:
+    'Gifts are received by Touch Heaven International Ministries. You will get an email receipt for every gift.',
+}

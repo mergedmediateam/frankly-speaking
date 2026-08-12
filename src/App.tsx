@@ -6,7 +6,7 @@ import Lenis from 'lenis'
 import { motion, useScroll, useTransform, useReducedMotion, useMotionValue, useSpring } from 'motion/react'
 import type { MotionValue } from 'motion/react'
 import playlist from './data/videos.json'
-import { FORUM_FORM, PARTNER_FORM } from './config'
+import { FORUM_FORM, PARTNER_FORM, DONATE } from './config'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -1694,6 +1694,389 @@ function PartnerPage() {
   )
 }
 
+/* --- Donate ------------------------------------------------------------
+   Give page. Frequency toggle → amount tiles → checkout hand-off.
+   Checkout is Square (see DONATE in config.ts); until the links are pasted in,
+   the CTA surfaces a "being connected" notice rather than faking a payment. */
+
+const GIVE_IMPACT = [
+  {
+    n: '01',
+    title: 'The broadcast stays daily',
+    body:
+      'Studio time, crew, cameras and the edit bay behind every episode. Giving keeps the show on a daily rhythm instead of whenever it can be afforded.',
+  },
+  {
+    n: '02',
+    title: 'It stays free to watch',
+    body:
+      'No paywall, no subscription. Every dispatch goes out on YouTube, Facebook and this site for anyone, anywhere, at no cost.',
+  },
+  {
+    n: '03',
+    title: 'It reaches further',
+    body:
+      'Distribution, guests, and the travel that puts Frank in front of the people shaping the story — from Jerusalem to Washington.',
+  },
+]
+
+function DonateBackdrop() {
+  const reduced = useReducedMotion()
+  const mx = useMotionValue(0)
+  const my = useMotionValue(0)
+  const smx = useSpring(mx, { stiffness: 50, damping: 18, mass: 0.4 })
+  const smy = useSpring(my, { stiffness: 50, damping: 18, mass: 0.4 })
+
+  useEffect(() => {
+    if (reduced) return
+    const onMove = (e: PointerEvent) => {
+      mx.set(e.clientX / window.innerWidth - 0.5)
+      my.set(e.clientY / window.innerHeight - 0.5)
+    }
+    window.addEventListener('pointermove', onMove)
+    return () => window.removeEventListener('pointermove', onMove)
+  }, [reduced, mx, my])
+
+  return (
+    <div aria-hidden="true" className="absolute inset-0 overflow-hidden pointer-events-none">
+      {SPONSOR_BACKDROP.filter((it) => it.kind !== 'play').map((it, i) => (
+        <BackdropFloat key={i} it={it} smx={smx} smy={smy} reduced={reduced} />
+      ))}
+    </div>
+  )
+}
+
+function AmountTile({
+  label,
+  active,
+  onClick,
+}: {
+  label: string
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`relative rounded-2xl border px-4 py-5 font-display text-2xl tracking-tight transition-[border-color,background-color,color,transform] duration-300 hover:scale-[1.03] active:scale-95 ${
+        active
+          ? 'border-blue-bright bg-blue/15 text-white shadow-[0_0_30px_-8px_rgba(59,139,255,0.6)]'
+          : 'border-line text-bone/80 hover:border-blue-bright/60 hover:text-white'
+      }`}
+    >
+      {label}
+    </button>
+  )
+}
+
+function DonatePage() {
+  const [freq, setFreq] = useState<'once' | 'monthly'>('once')
+  // null = the "Other" tile is selected and the custom field drives the amount
+  const [amount, setAmount] = useState<number | null>(50)
+  const [custom, setCustom] = useState('')
+  const [notice, setNotice] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const amounts = freq === 'once' ? DONATE.oneTimeAmounts : DONATE.monthlyAmounts
+
+  // Switching frequency: keep the amount if that tier exists, else pick the middle one
+  function switchFreq(next: 'once' | 'monthly') {
+    setFreq(next)
+    setNotice('')
+    const list = next === 'once' ? DONATE.oneTimeAmounts : DONATE.monthlyAmounts
+    setAmount((a) => (a != null && list.includes(a) ? a : list[1]))
+  }
+
+  const customValue = Number(custom)
+  const resolved = amount ?? (custom && customValue > 0 ? customValue : null)
+
+  // Hand off to Square: the function builds the checkout for this exact amount
+  // and returns its URL, which we navigate to in this same tab (a popup would
+  // be blocked on mobile and loses the giver).
+  async function give() {
+    if (busy) return
+    if (!resolved) {
+      setNotice('Enter an amount to continue.')
+      return
+    }
+    setNotice('')
+    setBusy(true)
+    try {
+      const res = await fetch(DONATE.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ freq, amount: resolved }),
+      })
+      const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string }
+      if (res.ok && data.url) {
+        window.location.href = data.url
+        return
+      }
+      setNotice(data.error || 'We could not open the secure checkout. Please try again.')
+    } catch {
+      setNotice('We could not reach the secure checkout. Please check your connection and try again.')
+    }
+    setBusy(false)
+  }
+
+  return (
+    <main className="overflow-x-clip">
+      {/* HERO + GIVE PANEL — headline owns the left, the give card the right */}
+      <section className="relative border-b border-line">
+        <DonateBackdrop />
+        <div className="relative z-10 mx-auto max-w-[1400px] px-6 py-20 md:py-28 grid lg:grid-cols-[1.05fr_0.95fr] gap-14 lg:gap-20 items-center">
+          <div data-reveal style={{ transform: 'translateY(26px)' }}>
+            <span className="kicker text-blue-bright">Support the broadcast</span>
+            <h1 className="mt-5 font-display text-[clamp(2.6rem,6.5vw,5.2rem)] leading-[0.97] tracking-tight">
+              Keep the truth
+              <br />
+              <span className="italic">on the air.</span>
+            </h1>
+            <p className="mt-7 max-w-lg text-bone/65 leading-relaxed">
+              Frankly Speaking is viewer-funded. Every dispatch — the studio, the
+              crew, the research behind each broadcast — is carried by people who
+              believe this word needs to keep going out. Your gift is what puts it
+              on air tomorrow.
+            </p>
+            <p className="mt-8 font-mono text-xs text-slate">
+              TOUCH HEAVEN STUDIOS · CANFIELD, OHIO
+            </p>
+          </div>
+
+          <div
+            className="rounded-3xl border border-line bg-ink-soft/70 backdrop-blur p-6 sm:p-8"
+            data-reveal
+            style={{ transform: 'translateY(26px)' }}
+          >
+            {/* frequency */}
+            <div
+              className="relative grid grid-cols-2 gap-1 p-1 rounded-full border border-line"
+              role="group"
+              aria-label="Giving frequency"
+            >
+              {(['once', 'monthly'] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => switchFreq(f)}
+                  aria-pressed={freq === f}
+                  className={`rounded-full py-2.5 text-sm font-medium transition-colors duration-300 ${
+                    freq === f ? 'bg-blue text-white' : 'text-bone/65 hover:text-bone'
+                  }`}
+                >
+                  {f === 'once' ? 'One-time' : 'Monthly'}
+                </button>
+              ))}
+            </div>
+
+            <p className="mt-6 kicker text-slate">
+              {freq === 'once' ? 'Choose an amount' : 'Give every month'}
+            </p>
+
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              {amounts.map((a) => (
+                <AmountTile
+                  key={a}
+                  label={`$${a}`}
+                  active={amount === a}
+                  onClick={() => {
+                    setAmount(a)
+                    setNotice('')
+                  }}
+                />
+              ))}
+              <AmountTile
+                label="Other"
+                active={amount === null}
+                onClick={() => {
+                  setAmount(null)
+                  setNotice('')
+                }}
+              />
+            </div>
+
+            {amount === null && (
+              <div className="mt-4 relative">
+                <span className="absolute left-6 top-1/2 -translate-y-1/2 font-display text-xl text-bone/50">
+                  $
+                </span>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  inputMode="decimal"
+                  autoFocus
+                  value={custom}
+                  onChange={(e) => {
+                    setCustom(e.target.value)
+                    setNotice('')
+                  }}
+                  placeholder="Amount"
+                  aria-label="Custom amount in US dollars"
+                  className="w-full bg-transparent pl-11 pr-6 py-4 rounded-full border border-line text-bone placeholder:text-slate outline-none focus:border-blue-bright transition-colors"
+                />
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={give}
+              disabled={busy}
+              className="mt-6 w-full bg-blue text-white px-7 py-4 rounded-full font-medium hover:bg-blue-bright transition-[background-color,transform] duration-300 active:scale-95 disabled:opacity-60"
+            >
+              {busy
+                ? 'Opening secure checkout…'
+                : resolved
+                  ? `Give $${resolved}${freq === 'monthly' ? ' / month' : ''}`
+                  : 'Give'}
+            </button>
+
+            {notice && (
+              <p className="mt-4 text-sm text-bone/70 leading-relaxed" aria-live="polite">
+                {notice}
+              </p>
+            )}
+
+            <p className="mt-5 font-mono text-[11px] leading-relaxed text-slate">
+              {DONATE.receiptNote}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* WHAT YOUR GIFT CARRIES */}
+      <section className="mx-auto max-w-[1400px] px-6 py-20 md:py-28">
+        <div data-reveal style={{ transform: 'translateY(24px)' }}>
+          <span className="kicker text-blue-bright">Where it goes</span>
+          <h2 className="mt-3 font-display text-3xl md:text-5xl tracking-tight leading-[1.02]">
+            What your gift carries
+          </h2>
+        </div>
+        <div className="mt-12 grid md:grid-cols-3 gap-px bg-line rounded-2xl overflow-hidden" data-grid>
+          {GIVE_IMPACT.map((it) => (
+            <div key={it.n} className="bg-ink p-8 md:p-10">
+              <span className="font-mono text-xs text-blue-bright">{it.n}</span>
+              <h3 className="mt-5 font-display text-2xl tracking-tight">{it.title}</h3>
+              <p className="mt-4 text-bone/65 leading-relaxed">{it.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* PULL QUOTE over the studio */}
+      <section className="relative border-y border-line">
+        <div className="absolute inset-0">
+          <img
+            src="/images/10-newsroom-dawn.png"
+            alt=""
+            aria-hidden
+            className="w-full h-full object-cover opacity-35"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/70 to-ink/30" />
+        </div>
+        <div
+          className="relative mx-auto max-w-[1400px] px-6 py-24 md:py-32"
+          data-reveal
+          style={{ transform: 'translateY(24px)' }}
+        >
+          <blockquote className="max-w-3xl font-display text-[clamp(1.9rem,4.6vw,3.6rem)] leading-[1.06] tracking-tight">
+            “I can only be Frank.”
+          </blockquote>
+          <p className="mt-6 font-mono text-xs text-slate">
+            FRANK AMEDIA · TOUCH HEAVEN INTERNATIONAL MINISTRIES
+          </p>
+        </div>
+      </section>
+
+      {/* OTHER WAYS */}
+      <section className="mx-auto max-w-[1400px] px-6 py-20 md:py-28">
+        <div className="grid md:grid-cols-2 gap-6" data-grid>
+          <a
+            href="#/sponsor"
+            className="group rounded-2xl border border-line p-8 md:p-10 hover:border-blue-bright/60 transition-colors"
+          >
+            <span className="kicker text-blue-bright">Give at a larger level</span>
+            <h3 className="mt-4 font-display text-2xl md:text-3xl tracking-tight">
+              Become a Sponsor
+            </h3>
+            <p className="mt-4 text-bone/65 leading-relaxed">
+              Underwrite the broadcast itself. Leave your details and the team will
+              reach out personally.
+            </p>
+            <span className="mt-6 inline-block text-blue-bright group-hover:translate-x-1 transition-transform">
+              Talk to the team →
+            </span>
+          </a>
+          <a
+            href="https://www.touchheaven.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group rounded-2xl border border-line p-8 md:p-10 hover:border-blue-bright/60 transition-colors"
+          >
+            <span className="kicker text-blue-bright">The wider ministry</span>
+            <h3 className="mt-4 font-display text-2xl md:text-3xl tracking-tight">
+              Touch Heaven
+            </h3>
+            <p className="mt-4 text-bone/65 leading-relaxed">
+              Frankly Speaking is part of Touch Heaven International Ministries —
+              preparing the way for the return of the Lord.
+            </p>
+            <span className="mt-6 inline-block text-blue-bright group-hover:translate-x-1 transition-transform">
+              Visit Touch Heaven ↗
+            </span>
+          </a>
+        </div>
+      </section>
+    </main>
+  )
+}
+
+/* Where Square sends the giver back after a completed checkout (#/thanks). */
+function ThanksPage() {
+  return (
+    <main className="relative min-h-[calc(100svh-104px)] grid place-items-center">
+      <DonateBackdrop />
+      <div
+        className="relative z-10 mx-auto max-w-[1400px] px-6 py-24 text-center"
+        data-reveal
+        style={{ transform: 'translateY(26px)' }}
+      >
+        <div className="mx-auto grid place-items-center w-16 h-16 rounded-full bg-blue/15 border border-blue-bright/40">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--color-blue-bright)" strokeWidth="2.5">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+        </div>
+        <h1 className="mt-8 font-display text-[clamp(2.4rem,6vw,4.6rem)] leading-[0.99] tracking-tight">
+          Thank you.
+        </h1>
+        <p className="mt-6 max-w-lg mx-auto text-bone/65 leading-relaxed">
+          Your gift keeps the broadcast on the air. A receipt is on its way to
+          your email — and tomorrow's dispatch is already in the works.
+        </p>
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <a
+            href={`#/watch/${LATEST_ID}`}
+            className="bg-blue text-white px-7 py-4 rounded-full font-medium hover:bg-blue-bright transition-colors"
+          >
+            Watch the latest broadcast
+          </a>
+          <a
+            href="#"
+            className="px-7 py-4 rounded-full border border-line text-bone hover:border-blue-bright hover:text-white transition-colors font-medium"
+          >
+            Back to home
+          </a>
+        </div>
+        <p className="mt-10 font-mono text-xs text-slate">
+          TOUCH HEAVEN STUDIOS · CANFIELD, OHIO
+        </p>
+      </div>
+    </main>
+  )
+}
+
 function AboutPage() {
   return (
     <main className="min-h-[calc(100svh-104px)] overflow-x-clip">
@@ -1967,15 +2350,17 @@ function Masthead({ route }: { route: string }) {
         </nav>
 
         <div className="flex items-center gap-3 sm:gap-4">
-          <SocialLinks className="hidden md:flex" iconClass="w-[18px] h-[18px]" />
-          <span className="hidden lg:block font-mono text-xs text-slate tabular-nums">
-            CANFIELD, OH
-          </span>
           <a
             href="#/sponsor"
-            className="hidden sm:inline-flex border border-line text-bone/85 text-sm font-medium rounded-full px-5 py-2 hover:border-blue-bright hover:text-white transition-[border-color,color,transform] duration-300 hover:scale-[1.04] active:scale-95"
+            className="hidden xl:inline-flex border border-line text-bone/85 text-sm font-medium rounded-full px-5 py-2 hover:border-blue-bright hover:text-white transition-[border-color,color,transform] duration-300 hover:scale-[1.04] active:scale-95"
           >
             Become a Sponsor
+          </a>
+          <a
+            href="#/donate"
+            className="hidden sm:inline-flex border border-blue-bright/60 text-blue-bright text-sm font-medium rounded-full px-5 py-2 hover:bg-blue hover:border-blue hover:text-white transition-[background-color,border-color,color,transform] duration-300 hover:scale-[1.04] active:scale-95"
+          >
+            Donate
           </a>
           <a
             href={`#/watch/${LATEST_ID}`}
@@ -2050,6 +2435,13 @@ function Masthead({ route }: { route: string }) {
           Watch the latest broadcast
         </a>
         <a
+          href="#/donate"
+          onClick={() => setMenuOpen(false)}
+          className="mt-3 inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full border border-blue-bright/60 text-blue-bright hover:bg-blue hover:border-blue hover:text-white transition-colors font-medium"
+        >
+          Donate
+        </a>
+        <a
           href="#/sponsor"
           onClick={() => setMenuOpen(false)}
           className="mt-3 inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full border border-line text-bone hover:border-blue-bright hover:text-white transition-colors font-medium"
@@ -2082,6 +2474,9 @@ function SiteFooter() {
               {n.label}
             </a>
           ))}
+          <a href="#/donate" className="hover:text-bone transition-colors">
+            Donate
+          </a>
           <a href="#/sponsor" className="hover:text-bone transition-colors">
             Become a Sponsor
           </a>
@@ -2112,7 +2507,16 @@ export default function App() {
 
   const watchMatch = /^#\/watch\/([A-Za-z0-9_-]{4,})/.exec(route)
   const watchId = watchMatch ? watchMatch[1] : null
-  let page: 'home' | 'dispatches' | 'series' | 'beyond' | 'partner' | 'about' | 'watch' = 'home'
+  let page:
+    | 'home'
+    | 'dispatches'
+    | 'series'
+    | 'beyond'
+    | 'partner'
+    | 'donate'
+    | 'thanks'
+    | 'about'
+    | 'watch' = 'home'
   if (watchId) page = 'watch'
   else if (route.startsWith('#/episodes') || route.startsWith('#/dispatches')) page = 'dispatches'
   else if (route.startsWith('#/series')) page = 'series'
@@ -2124,6 +2528,14 @@ export default function App() {
   )
     page = 'beyond'
   else if (route.startsWith('#/sponsor') || route.startsWith('#/partner')) page = 'partner'
+  // "#/give" and "#/donations" kept as aliases
+  else if (
+    route.startsWith('#/donate') ||
+    route.startsWith('#/give') ||
+    route.startsWith('#/donations')
+  )
+    page = 'donate'
+  else if (route.startsWith('#/thanks')) page = 'thanks'
   else if (route.startsWith('#/about')) page = 'about'
 
   // Smooth scroll (global)
@@ -2266,6 +2678,10 @@ export default function App() {
           <BeyondPage />
         ) : page === 'partner' ? (
           <PartnerPage />
+        ) : page === 'donate' ? (
+          <DonatePage />
+        ) : page === 'thanks' ? (
+          <ThanksPage />
         ) : page === 'about' ? (
           <AboutPage />
         ) : (
