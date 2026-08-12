@@ -144,7 +144,7 @@ const TICKER = [
   'LIVE WED 8PM ET — Touch Heaven Studios, Canfield OH',
 ]
 
-type Video = { id: string; title: string; duration: number | null }
+type Video = { id: string; title: string; duration: number | null; date?: number | null }
 
 const VIDEOS = playlist.videos as Video[]
 const LATEST_ID = VIDEOS[0]?.id ?? ''
@@ -156,6 +156,18 @@ function formatDuration(s: number | null) {
   const m = Math.floor(s / 60)
   const ss = String(s % 60).padStart(2, '0')
   return `${m}:${ss}`
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+// videos.json stores dates as YYYYMMDD numbers → "Aug 11, 2026"
+function formatDate(d: number | null | undefined) {
+  if (!d) return ''
+  const y = Math.floor(d / 10000)
+  const m = Math.floor((d % 10000) / 100)
+  const day = d % 100
+  if (m < 1 || m > 12) return ''
+  return `${MONTHS[m - 1]} ${day}, ${y}`
 }
 
 function cleanTitle(t: string) {
@@ -289,7 +301,12 @@ function VideoCard({ v }: { v: Video }) {
       className="group snap-start shrink-0 w-[280px] sm:w-[330px] lg:w-[360px] block"
     >
       <VideoThumb v={v} />
-      <span className="mt-4 block kicker text-blue-bright">{categoryOf(v.title)}</span>
+      <span className="mt-4 flex items-baseline gap-3">
+        <span className="kicker text-blue-bright">{categoryOf(v.title)}</span>
+        {v.date ? (
+          <span className="font-mono text-[11px] text-slate tabular-nums">{formatDate(v.date)}</span>
+        ) : null}
+      </span>
       <h3 className="mt-2 font-display text-lg leading-snug tracking-tight text-bone line-clamp-2 group-hover:text-white transition-colors">
         {cleanTitle(v.title)}
       </h3>
@@ -301,7 +318,12 @@ function VideoTile({ v }: { v: Video }) {
   return (
     <a href={`#/watch/${v.id}`} className="group block">
       <VideoThumb v={v} />
-      <span className="mt-3 block kicker text-blue-bright">{categoryOf(v.title)}</span>
+      <span className="mt-3 flex items-baseline gap-3">
+        <span className="kicker text-blue-bright">{categoryOf(v.title)}</span>
+        {v.date ? (
+          <span className="font-mono text-[11px] text-slate tabular-nums">{formatDate(v.date)}</span>
+        ) : null}
+      </span>
       <h3 className="mt-2 font-display text-base leading-snug tracking-tight text-bone line-clamp-2 group-hover:text-white transition-colors">
         {cleanTitle(v.title)}
       </h3>
@@ -2258,7 +2280,9 @@ function EpisodeViewer({ id }: { id: string }) {
               {cleanTitle(v.title)}
             </h1>
             <p className="mt-3 font-mono text-xs text-slate">
-              FRANKLY SPEAKING · FRANK AMEDIA{v.duration ? ` · ${formatDuration(v.duration)}` : ''}
+              FRANKLY SPEAKING · FRANK AMEDIA
+              {v.date ? ` · ${formatDate(v.date).toUpperCase()}` : ''}
+              {v.duration ? ` · ${formatDuration(v.duration)}` : ''}
             </p>
           </div>
           <a
