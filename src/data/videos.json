@@ -1,7 +1,7 @@
 {
   "playlistId": "PLjxZripGCNoRFIX8HQIoufzmXD7Hegavj",
   "playlistUrl": "https://www.youtube.com/playlist?list=PLjxZripGCNoRFIX8HQIoufzmXD7Hegavj",
-  "count": 113,
+  "count": 114,
   "videos": [
     {
       "id": "NQoLn3rqNDs",
@@ -680,6 +680,12 @@
       "title": "Direct Hit on a Bomb Shelter: Beit Shemesh Mourns 9 | Global Dispatch",
       "duration": 3544,
       "date": 20260302
+    },
+    {
+      "id": "qeKS9Dc5MG0",
+      "title": "Seated Across From Netanyahu at Blair House — Dr. Mike Evans | Frankly Speaking",
+      "duration": 1652,
+      "date": null
     }
   ]
 }
