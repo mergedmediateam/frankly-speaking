@@ -49,12 +49,12 @@ export const DONATE = {
 // platform that hasn't finished indexing the feed yet simply doesn't show up.
 // Fill one in the moment the listing goes live — no code change needed.
 export const PODCAST = {
-  // 2026-08-31: Apple listing id6806338119 was REMOVED from Apple's catalog
-  // (lookup returns 0 results — likely fallout of the unclaimed-show/2FA saga).
-  // Left EMPTY so no dead link ships; the moment the show is re-listed, paste
-  // the new URL here and in the platform entry below and Apple reappears
-  // everywhere (hero chips, About panels, per-episode links) with no other change.
-  appleUrl: '',
+  // The Apple listing briefly VANISHED from Apple's catalog (404 + zero API
+  // results, 2026-08-31) and came back under the same id after Alvar published
+  // the episode from Buzzsprout — an unpublished/unclaimed show gets pulled.
+  // If it ever 404s again, empty this and the platform href below: platforms
+  // with no URL simply don't render, so nothing dead ever ships.
+  appleUrl: 'https://podcasts.apple.com/us/podcast/frankly-speaking-podcast/id6806338119',
   // Kept for reference/tooling. Deliberately NOT surfaced in the UI — a raw RSS
   // link means nothing to this audience; the apps below are how people listen.
   feedUrl: 'https://rss.buzzsprout.com/2643016.rss',
@@ -66,7 +66,7 @@ export const PODCAST = {
       id: 'apple' as const,
       label: 'Apple Podcasts',
       cta: 'Follow the show',
-      href: '', // dead listing — see appleUrl note above
+      href: 'https://podcasts.apple.com/us/podcast/frankly-speaking-podcast/id6806338119',
       // Brand hue, used only for the hover glow — never to repaint the tile.
       hue: '168, 74, 233',
     },
