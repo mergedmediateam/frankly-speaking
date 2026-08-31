@@ -37,3 +37,42 @@ export const DONATE = {
   receiptNote:
     'Gifts are received by Touch Heaven International Ministries. You will get an email receipt for every gift.',
 }
+
+/* --------------------------------- PODCAST -------------------------------- */
+// The audio show. Hosted on Buzzsprout (show 2643016); everything else — Apple,
+// Spotify, etc. — is syndicated from that one RSS feed. Episode data is pulled
+// into src/data/podcast.json by scripts/fetch-podcast.mjs (run by the same
+// GitHub Action that refreshes the video playlist), so the browser never has to
+// fetch RSS (CORS-blocked) and the site stays a plain static build.
+//
+// SUBSCRIBE LINKS: only entries with a non-empty `href` are rendered, so a
+// platform that hasn't finished indexing the feed yet simply doesn't show up.
+// Fill one in the moment the listing goes live — no code change needed.
+export const PODCAST = {
+  appleUrl: 'https://podcasts.apple.com/us/podcast/frankly-speaking-podcast/id6806338119',
+  // Kept for reference/tooling. Deliberately NOT surfaced in the UI — a raw RSS
+  // link means nothing to this audience; the apps below are how people listen.
+  feedUrl: 'https://rss.buzzsprout.com/2643016.rss',
+  // Only entries with a non-empty `href` render, so a platform that hasn't
+  // finished indexing the feed simply doesn't appear. Marks are drawn in code
+  // (PlatformIcon in App.tsx), keyed by `id` — no icon paths live here.
+  platforms: [
+    {
+      id: 'apple' as const,
+      label: 'Apple Podcasts',
+      cta: 'Follow the show',
+      href: 'https://podcasts.apple.com/us/podcast/frankly-speaking-podcast/id6806338119',
+      // Brand hue, used only for the hover glow — never to repaint the tile.
+      hue: '168, 74, 233',
+    },
+    {
+      id: 'spotify' as const,
+      label: 'Spotify',
+      cta: 'Follow the show',
+      href: 'https://open.spotify.com/show/3Ccs9o53RD4fcCpwbhh7zQ',
+      hue: '29, 185, 84',
+    },
+    // Add YouTube Music / Amazon here the day their listing goes live — paste a
+    // URL into `href`, add a case to PlatformIcon, done.
+  ],
+}

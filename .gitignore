@@ -32,3 +32,29 @@ alert_config.json
 alerted.json
 work_queue.json
 daily_run.out.log
+
+# token backups too (a live token was found in token.json.bak-*)
+token.json*
+
+# dev-only phone-frame preview harness — must never reach production
+public/mobile.html
+
+# auto-thumbnail pipeline code + state (lives in this folder, NOT part of the site)
+AUTO-PIPELINE.md
+automation/
+__pycache__/
+alert_config.example.json
+auth_flow.out
+daily_run.py*
+make_upload_jpgs.py
+processed.json
+push_episode.py
+push_meta.py
+retry_ep99.sh
+run_daily.bat
+run_daily_hidden.vbs
+set_thumbnails.py
+thumb_map*.json
+watch_new.py
+token_health.py*
+*.bak-*

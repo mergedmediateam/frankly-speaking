@@ -3,18 +3,31 @@ import { createPortal } from 'react-dom'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
-import { motion, useScroll, useTransform, useReducedMotion, useMotionValue, useSpring } from 'motion/react'
+import { motion, AnimatePresence, useScroll, useTransform, useReducedMotion, useMotionValue, useSpring } from 'motion/react'
 import type { MotionValue } from 'motion/react'
 import playlist from './data/videos.json'
-import { FORUM_FORM, PARTNER_FORM, DONATE } from './config'
+import podcast from './data/podcast.json'
+import { FORUM_FORM, PARTNER_FORM, DONATE, PODCAST } from './config'
 
 gsap.registerPlugin(ScrollTrigger)
+
+/* Lenis owns scrolling for the whole site, so anything that wants to move the
+   page has to go through it — a native scrollIntoView fights the smooth-scroll
+   loop and lands in the wrong place. App assigns the instance here on mount so
+   components further down can reach it without prop-drilling a ref. */
+let lenisInstance: Lenis | null = null
+
+function smoothScrollTo(target: HTMLElement, offset = -90) {
+  if (lenisInstance) lenisInstance.scrollTo(target, { offset, duration: 1.1 })
+  else target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
 
 /* ---------------------------------- DATA ---------------------------------- */
 
 const NAV = [
   { label: 'Episodes', href: '#/episodes' },
   { label: 'Series', href: '#/series' },
+  { label: 'Podcast', href: '#/podcast' },
   { label: 'Be On The Show', href: '#/be-on-the-show' },
   { label: 'About', href: '#/about' },
 ]
@@ -147,6 +160,25 @@ const TICKER = [
 type Video = { id: string; title: string; duration: number | null; date?: number | null }
 
 const VIDEOS = playlist.videos as Video[]
+
+/* Podcast cover art.
+
+   The Buzzsprout feed still serves the old artwork, so podcast.json carries
+   storage.buzzsprout.com URLs. Until the new covers are uploaded there, prefer
+   the local files in public/podcast/ and fall back to whatever the feed gives
+   us for anything we don't have art for. Applied once where EPISODES/SHOW are
+   built, so every consumer picks it up.
+
+   Once the new art is live on Buzzsprout, delete PODCAST_ART_COUNT/podcastCover
+   and point these back at the feed. */
+const PODCAST_ART_COUNT = 24
+const podcastCover = (num: number, fallback: string) =>
+  num >= 1 && num <= PODCAST_ART_COUNT
+    ? `/podcast/ep-${String(num).padStart(2, '0')}.jpg`
+    : fallback
+
+// Show artwork, used by the home teaser as well as the podcast page.
+const PODCAST_COVER = '/podcast/show.jpg'
 const LATEST_ID = VIDEOS[0]?.id ?? ''
 
 /* ------------------------------- HELPERS --------------------------------- */
@@ -574,6 +606,61 @@ function Home() {
             <a href="#/series" className="block">
               <Photo label="Series — Seven Spheres" src="/images/06-seven-spheres.png" className="aspect-[16/10] w-full" />
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* PODCAST TEASER — the audio show. Art on the LEFT so the band mirrors the
+          series teaser above it and the page keeps alternating. */}
+      <section className="border-t border-line">
+        <div className="mx-auto max-w-[1400px] px-6 py-20 grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+          <div className="lg:col-span-5" data-reveal style={{ transform: 'translateY(28px)' }}>
+            <a href="#/podcast" className="block relative group">
+              <div className="absolute -inset-5 rounded-[2rem] bg-blue/20 blur-3xl pointer-events-none" aria-hidden />
+              <div className="relative aspect-square w-full max-w-[400px] mx-auto overflow-hidden rounded-2xl border border-line bg-ink-soft">
+                <img
+                  src={PODCAST_COVER}
+                  alt="Frankly Speaking Podcast cover art"
+                  loading="lazy"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
+                />
+                <span className="absolute inset-0 grid place-items-center">
+                  <span className="grid place-items-center w-16 h-16 rounded-full bg-blue/90 text-white backdrop-blur transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-110">
+                    <PlayIcon className="w-7 h-7 translate-x-[2px]" />
+                  </span>
+                </span>
+              </div>
+            </a>
+          </div>
+          <div className="lg:col-span-7" data-reveal style={{ transform: 'translateY(28px)' }}>
+            <span className="kicker text-blue-bright">Now on every podcast app</span>
+            <h2 className="mt-4 font-display text-4xl md:text-5xl leading-[1.02] tracking-tight">
+              Frankly Speaking Podcast
+            </h2>
+            <p className="mt-6 max-w-lg text-bone/65 leading-relaxed">
+              The broadcast, cut down to the moments that still hold — frontline
+              dispatches, testimony, and prophecy read against the morning&rsquo;s
+              headlines. Take it with you.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <a
+                href="#/podcast"
+                className="inline-flex items-center gap-2.5 bg-blue text-white px-6 py-3.5 rounded-full font-medium hover:bg-blue-bright transition-[background-color,transform] duration-300 hover:scale-[1.04] active:scale-95"
+              >
+                <PlayIcon className="w-4 h-4 translate-x-[1px]" />
+                Listen now
+              </a>
+              {PODCAST.appleUrl && (
+                <a
+                  href={PODCAST.appleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 border border-line text-bone/85 px-6 py-3.5 rounded-full font-medium hover:border-blue-bright hover:text-white transition-colors"
+                >
+                  Apple Podcasts ↗
+                </a>
+              )}
+            </div>
           </div>
         </div>
       </section>
@@ -1941,7 +2028,7 @@ function DonatePage() {
               <br />
               <span className="italic">on the air.</span>
             </h1>
-            <p className="mt-7 max-w-lg text-bone/65 leading-relaxed">
+            <p className="mt-8 max-w-md text-bone/65 leading-relaxed">
               Frankly Speaking is viewer-funded. Every dispatch — the studio, the
               crew, the research behind each broadcast — is carried by people who
               believe this word needs to keep going out. Your gift is what puts it
@@ -2410,8 +2497,1461 @@ function EpisodeViewer({ id }: { id: string }) {
 
 /* -------------------------------- LAYOUT --------------------------------- */
 
+/* ------------------------------- PODCAST -------------------------------- */
+/* The audio show. Data comes from src/data/podcast.json, written at build time
+   by scripts/fetch-podcast.mjs from the Buzzsprout RSS feed (the browser can't
+   read RSS directly — CORS). Playback streams straight from the Buzzsprout
+   enclosure URL so every listen still counts in Frank's hosting stats.
+
+   The player is hand-built rather than a Buzzsprout iframe: an embed drags its
+   own chrome in and breaks the broadcast-editorial look. One <audio> element
+   lives at the page root and every play button on the page drives it.
+
+   DIRECTION — the page opens like a broadcast signing on. It reuses the site's
+   signature motion grammar from ShowTitle (SHOW_EASE, ghost outline zoom, glow
+   bloom, masked character cascade, rules drawing outward, infinite shimmer) but
+   sets it in the display serif instead of the black sans, so the podcast reads
+   as family to Be On The Show rather than a copy of it. The scrubber is the
+   page's identity: a full-bleed "signal rail" that draws itself across the
+   viewport on arrival and stays live under your thumb. */
+
+type Episode = (typeof podcast.episodes)[number]
+
+const EPISODES = (podcast.episodes as Episode[]).map((e) => ({
+  ...e,
+  image: podcastCover(e.num, e.image),
+}))
+const SHOW = { ...podcast.show, image: PODCAST_COVER }
+
+// 4265 → "1:11:05" (the transport clock — mm:ss, hours only when needed)
+function formatClock(s: number) {
+  if (!Number.isFinite(s) || s < 0) s = 0
+  const t = Math.floor(s)
+  const h = Math.floor(t / 3600)
+  const m = Math.floor((t % 3600) / 60)
+  const ss = String(t % 60).padStart(2, '0')
+  return h ? `${h}:${String(m).padStart(2, '0')}:${ss}` : `${m}:${ss}`
+}
+
+// 4265 → "1 hr 11 min" (the human-readable runtime in metadata lines)
+function formatRuntime(s: number | null) {
+  if (!s) return ''
+  const h = Math.floor(s / 3600)
+  const m = Math.round((s % 3600) / 60)
+  if (h && m) return `${h} hr ${m} min`
+  if (h) return `${h} hr`
+  return `${m} min`
+}
+
+// podcast.json stores dates as "YYYY-MM-DD" → "Aug 28, 2026"
+function formatISODate(d: string | null) {
+  if (!d) return ''
+  const [y, m, day] = d.split('-').map(Number)
+  if (!y || !m || m > 12) return ''
+  return `${MONTHS[m - 1]} ${Number(day)}, ${y}`
+}
+
+const SPEEDS = [1, 1.25, 1.5, 1.75, 2]
+
+/* Decorative "audio is playing" indicator — three bars on a CSS loop. Purely an
+   affordance: it is NOT driven by the waveform (the audio is served cross-origin
+   from a CDN that blocks the Web Audio analyser), so it never claims real levels. */
+function EqBars({ playing }: { playing: boolean }) {
+  return (
+    <span className="inline-flex items-end gap-[2px] h-3" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className={`w-[2px] rounded-full bg-current ${playing ? 'eq-bar' : ''}`}
+          style={{ height: playing ? undefined : '35%', animationDelay: `${i * 0.18}s` }}
+        />
+      ))}
+    </span>
+  )
+}
+
+function PlayIcon({ className = 'w-5 h-5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M8 5.14v13.72a.5.5 0 0 0 .77.42l10.4-6.86a.5.5 0 0 0 0-.84L8.77 4.72a.5.5 0 0 0-.77.42Z" />
+    </svg>
+  )
+}
+
+function PauseIcon({ className = 'w-5 h-5' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M7 4.5h3.2v15H7zM13.8 4.5H17v15h-3.2z" />
+    </svg>
+  )
+}
+
+/* Skip-back-15 / skip-forward-30 — a circular arrow with the number inside. */
+function SkipIcon({ dir, secs }: { dir: 'back' | 'fwd'; secs: number }) {
+  return (
+    <svg viewBox="0 0 24 24" className="w-6 h-6" aria-hidden>
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        transform={dir === 'back' ? 'scale(-1,1) translate(-24,0)' : undefined}
+      >
+        <path d="M12 5.5a7 7 0 1 0 6.6 4.7" />
+        <path d="M18.9 4.6v5.4h-5.2" />
+      </g>
+      <text
+        x="12"
+        y="16.4"
+        textAnchor="middle"
+        fill="currentColor"
+        style={{ font: '700 7px var(--font-mono)' }}
+      >
+        {secs}
+      </text>
+    </svg>
+  )
+}
+
+/* Shared seek behaviour for both rails (hero signal rail + docked mini rail). */
+function useSeekDrag(onSeek: (f: number) => void) {
+  const rail = useRef<HTMLDivElement>(null)
+  const [dragging, setDragging] = useState(false)
+
+  const fractionAt = (clientX: number) => {
+    const el = rail.current
+    if (!el) return 0
+    const r = el.getBoundingClientRect()
+    return Math.min(1, Math.max(0, (clientX - r.left) / r.width))
+  }
+
+  return {
+    rail,
+    dragging,
+    handlers: {
+      onPointerDown: (e: React.PointerEvent) => {
+        e.currentTarget.setPointerCapture(e.pointerId)
+        setDragging(true)
+        onSeek(fractionAt(e.clientX))
+      },
+      onPointerMove: (e: React.PointerEvent) => {
+        if (dragging) onSeek(fractionAt(e.clientX))
+      },
+      onPointerUp: (e: React.PointerEvent) => {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+        setDragging(false)
+      },
+      onPointerCancel: (e: React.PointerEvent) => {
+        if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+        setDragging(false)
+      },
+    },
+  }
+}
+
+/* THE WAVEFORM — the player's scrubber and its signature object.
+
+   The bars are REAL: `peaks` in podcast.json is RMS measured off the published
+   MP3 by ffmpeg at build time (see scripts/fetch-podcast.mjs), contrast-stretched
+   so a loudness-normalised speech track doesn't draw as a flat block. Episodes
+   published before the peaks pipeline existed simply have `peaks: null` and get
+   a plain bar instead — never a decorative fake.
+
+   Two identical bar rows are stacked and the played one is revealed by a width
+   clip, so scrubbing updates a single style rather than restyling 160 nodes
+   every timeupdate. */
+function Waveform({
+  peaks,
+  progress,
+  duration,
+  time,
+  playing,
+  onSeek,
+}: {
+  peaks: number[] | null
+  progress: number
+  duration: number
+  time: number
+  playing: boolean
+  onSeek: (fraction: number) => void
+}) {
+  const reduced = useReducedMotion()
+  const { rail, dragging, handlers } = useSeekDrag(onSeek)
+  const pct = `${Math.min(100, Math.max(0, progress * 100))}%`
+
+  /* Downsample so the bars stay legible at any width: at the full 160 a 390px
+     phone gives each bar 0.14px and the 2px gaps swallow the wave entirely.
+
+     Driven off viewport width rather than the element's own box: the element is
+     mounted lazily (the player only exists once something plays), so measuring
+     it races with layout — an earlier ResizeObserver version latched onto a
+     stale 390px and drew 78 fat 14px blocks on a 1290px rail. Breakpoints are
+     boring here, and boring is correct. */
+  const barCountFor = (w: number) => (w < 640 ? 64 : w < 1024 ? 104 : 160)
+  const [slots, setSlots] = useState(() =>
+    barCountFor(typeof window === 'undefined' ? 1280 : window.innerWidth)
+  )
+  useEffect(() => {
+    const onResize = () => setSlots(barCountFor(window.innerWidth))
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  const shown = useMemo(() => {
+    if (!peaks || !peaks.length) return []
+    if (slots >= peaks.length) return peaks
+    const step = peaks.length / slots
+    return Array.from({ length: slots }, (_, i) => {
+      const a = Math.floor(i * step)
+      const b = Math.max(a + 1, Math.floor((i + 1) * step))
+      const seg = peaks.slice(a, b)
+      return Math.round(seg.reduce((t, v) => t + v, 0) / seg.length)
+    })
+  }, [peaks, slots])
+
+  const bars = (lit: boolean) => (
+    <div className="flex h-full w-full items-center gap-[2px]" aria-hidden>
+      {shown.map((v, i) => (
+        <span
+          key={i}
+          className={`flex-1 rounded-[1px] ${lit ? 'bg-blue-bright' : 'bg-silver/20'}`}
+          style={{ height: `${Math.max(6, v)}%` }}
+        />
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="relative select-none">
+      <div className="mx-auto max-w-[1400px] px-6 flex items-end justify-between font-mono text-[0.7rem] tracking-[0.14em] uppercase">
+        <span className={`transition-colors duration-300 ${playing ? 'text-blue-bright' : 'text-slate'}`}>
+          {formatClock(time)}
+        </span>
+        <span className="text-slate">{duration ? formatClock(duration) : '--:--'}</span>
+      </div>
+
+      <motion.div
+        ref={rail}
+        role="slider"
+        aria-label="Seek"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(progress * 100)}
+        tabIndex={0}
+        data-motion-safe
+        {...handlers}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowRight') onSeek(Math.min(1, progress + 0.02))
+          if (e.key === 'ArrowLeft') onSeek(Math.max(0, progress - 0.02))
+        }}
+        className="group relative mt-2 w-full cursor-pointer touch-none px-6 py-3"
+        initial={reduced ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, ease: SHOW_EASE }}
+      >
+        {shown.length ? (
+          <div className="relative h-14 w-full">
+            {bars(false)}
+            {/* Played portion: an identical FULL-WIDTH row revealed with
+                clip-path. Clipping beats a width-based mask here because the lit
+                bars stay on the same grid as the dim ones without the inner row
+                needing to know the rail's pixel width (which would mean reading
+                a ref during render). */}
+            <div
+              className="absolute inset-0"
+              style={{ clipPath: `inset(0 ${100 - Math.min(100, Math.max(0, progress * 100))}% 0 0)` }}
+            >
+              {bars(true)}
+            </div>
+          </div>
+        ) : (
+          /* no peaks for this episode — an honest plain bar, not a fake wave */
+          <div className="relative h-2 w-full rounded-full bg-line overflow-hidden">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-deep via-blue to-blue-bright"
+              style={{ width: pct }}
+            />
+          </div>
+        )}
+
+        {/* playhead */}
+        <span
+          className={`pointer-events-none absolute top-2 bottom-2 w-[2px] -translate-x-1/2 bg-bone transition-[transform,box-shadow] duration-300 ${
+            dragging ? 'scale-y-105' : ''
+          } ${playing ? 'rail-head-live' : 'shadow-[0_0_10px_rgba(238,242,248,0.5)]'}`}
+          style={{ left: `calc(${pct} + 1.5rem - ${progress * 3}rem)` }}
+          aria-hidden
+        />
+      </motion.div>
+    </div>
+  )
+}
+
+/* Compact rail for the docked mini-player. */
+function MiniRail({ progress, onSeek }: { progress: number; onSeek: (f: number) => void }) {
+  const { rail, dragging, handlers } = useSeekDrag(onSeek)
+  const pct = `${Math.min(100, Math.max(0, progress * 100))}%`
+  return (
+    <div
+      ref={rail}
+      role="slider"
+      aria-label="Seek"
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(progress * 100)}
+      tabIndex={0}
+      {...handlers}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowRight') onSeek(Math.min(1, progress + 0.02))
+        if (e.key === 'ArrowLeft') onSeek(Math.max(0, progress - 0.02))
+      }}
+      className="group relative w-full cursor-pointer touch-none select-none py-2"
+    >
+      <div className="relative h-1 w-full rounded-full bg-line overflow-hidden">
+        <div className="rail-ticks absolute inset-0 opacity-60" aria-hidden />
+        <div
+          className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-deep via-blue to-blue-bright"
+          style={{ width: pct }}
+        />
+      </div>
+      <span
+        className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3 w-[2px] rounded-full bg-blue-bright shadow-[0_0_12px_rgba(59,139,255,0.9)] transition-transform duration-200 ${
+          dragging ? 'scale-y-125' : 'group-hover:scale-y-125'
+        }`}
+        style={{ left: pct }}
+        aria-hidden
+      />
+    </div>
+  )
+}
+
+/* Page title — the arrival moment.
+   Set as the show's own broadcast lockup rather than the site's display serif:
+   FRANKLY in white over SPEAKING in blue, heavy uppercase on very tight
+   leading, matching the mark printed on the episode artwork beside it. Keeping
+   the two identical means the hero and the cover read as one object.
+
+   "PODCAST" is deliberately NOT a third heavy line — that would alter a client
+   brand mark. It sits below the lockup as a spaced mono descriptor.
+
+   The masked character cascade and the blue shimmer carry over from the earlier
+   version (and from ShowTitle on Be On The Show). The ghost outline behind the
+   title was removed on request — it was the main source of background noise. */
+function PodcastTitle() {
+  const reduced = useReducedMotion()
+
+  const TONE = {
+    bone: 'text-bone',
+    blue: 'title-shimmer-blue',
+    breathe: 'podcast-breathe',
+  } as const
+
+  const cascade = (word: string, tone: keyof typeof TONE, offset: number) => (
+    <span className="block whitespace-nowrap">
+      {word.split('').map((c, i) => (
+        <span key={i} className="inline-block overflow-hidden align-top pb-[0.1em] -mb-[0.1em]">
+          <motion.span
+            data-motion-unmask
+            className={`inline-block ${TONE[tone]}`}
+            initial={reduced ? false : { y: '115%', rotate: 4 }}
+            animate={{ y: '0%', rotate: 0 }}
+            transition={{ duration: 0.9, ease: SHOW_EASE, delay: 0.35 + (offset + i) * 0.035 }}
+          >
+            {c}
+          </motion.span>
+        </span>
+      ))}
+    </span>
+  )
+
+  return (
+    <div className="relative">
+      <h1
+        aria-label="Frankly Speaking Podcast"
+        className="relative font-body font-black uppercase leading-[0.84] tracking-[-0.02em] text-[clamp(2.7rem,7.4vw,5.8rem)]"
+      >
+        {cascade('Frankly', 'bone', 0)}
+        {cascade('Speaking', 'blue', 7)}
+        {/* PODCAST is the third line of the same lockup, at the same size — it is
+            separated by value, not by scale, so the brand mark still reads as
+            FRANKLY / SPEAKING with a descriptor rather than a three-word name. */}
+        {cascade('Podcast', 'breathe', 15)}
+      </h1>
+    </div>
+  )
+}
+
+/* Platform marks, drawn from primitives rather than pasted path data — a copied
+   path is how the wrong logo (Pinterest) shipped here once already. Built from
+   circles and arcs so the shape is readable in the source and verifiable on screen. */
+function PlatformIcon({ id, className = 'w-6 h-6' }: { id: 'apple' | 'spotify'; className?: string }) {
+  if (id === 'apple') {
+    // Apple Podcasts: a microphone (round head + tapered stand) inside two
+    // broadcast arcs that open downward.
+    return (
+      <svg viewBox="0 0 24 24" className={className} aria-hidden>
+        <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+          <path d="M4.4 15.4a8.6 8.6 0 1 1 15.2 0" />
+          <path d="M8.1 14.2a4.9 4.9 0 1 1 7.8 0" />
+        </g>
+        <circle cx="12" cy="11.6" r="2.45" fill="currentColor" />
+        <path
+          d="M9.95 17.2c0-.95.92-1.5 2.05-1.5s2.05.55 2.05 1.5l-.57 3.4c-.13.83-.7 1.4-1.48 1.4s-1.35-.57-1.48-1.4z"
+          fill="currentColor"
+        />
+      </svg>
+    )
+  }
+  // Spotify: filled disc with three signal arcs knocked out.
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <circle cx="12" cy="12" r="10" fill="currentColor" />
+      <g fill="none" stroke="var(--color-ink)" strokeWidth="1.7" strokeLinecap="round">
+        <path d="M7.1 9.2c3.2-.85 6.6-.5 9.5 1" />
+        <path d="M7.9 12.5c2.6-.65 5.4-.35 7.8.9" />
+        <path d="M8.7 15.6c2-.5 4.1-.28 5.9.72" />
+      </g>
+    </svg>
+  )
+}
+
+type Platform = (typeof PODCAST.platforms)[number]
+
+/* ------------------------- HERO SUBSCRIBE --------------------------------
+   Wash chips — chosen 2026-08-29, then scaled up on request so they carry real
+   weight in the hero instead of reading as a footnote. They are a compact
+   relative of the split panels in the About band: same idea (the platform's
+   colour washes in, the surface stays broadcast blue), different proportion.
+
+   Still deliberately not filled at rest. The hero's primary action is the 64px
+   play button; these are the second one, so they gain presence through SIZE and
+   type weight rather than through a solid fill that would rival it. */
+function HeroSubscribe({ className = '' }: { className?: string }) {
+  const live = PODCAST.platforms.filter((p) => p.href)
+
+  return (
+    <div className={className} data-motion-safe>
+      {/* Matches the enlarged LATEST EPISODE label on the other side of the hero:
+          same bold lockup sans, same blue, so the two read as one system rather
+          than as two unrelated captions. The rule carries it across the column
+          so it lands as a section head, not a stray line of small type. */}
+      <div className="flex items-center gap-4 max-w-xl">
+        <span className="font-body font-bold uppercase text-blue-bright whitespace-nowrap leading-none tracking-[0.2em] text-[clamp(0.95rem,1.25vw,1.25rem)]">
+          Listen now on
+        </span>
+        <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-line to-transparent" />
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl">
+        {live.map((p, i) => (
+          <motion.a
+            key={p.id}
+            href={p.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={`Listen to Frankly Speaking on ${p.label}`}
+            style={{ ['--hue' as string]: p.hue }}
+            className="hero-sub-chip group relative flex items-center gap-4 overflow-hidden rounded-xl border border-line px-6 py-5"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: SHOW_EASE, delay: 1.15 + i * 0.09 }}
+            whileHover={{ y: -3 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <span aria-hidden className="hero-sub-chip-wash" />
+            <PlatformIcon id={p.id} className="relative shrink-0 w-9 h-9 hero-sub-chip-mark" />
+            <span className="relative min-w-0 font-display text-lg md:text-xl tracking-tight leading-tight whitespace-nowrap">
+              {p.label}
+            </span>
+            <span
+              aria-hidden
+              className="relative ml-auto shrink-0 text-slate transition-[transform,color] duration-300 group-hover:translate-x-1 group-hover:text-bone"
+            >
+              →
+            </span>
+          </motion.a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------- LISTEN ON (About band) -------------------------
+   Split panels — chosen 2026-08-29 over console keys and magnetic tiles.
+   The mark is blown up as a watermark bleeding off the corner, and the
+   platform's colour washes up from the floor of the panel on hover. Colour only
+   ever arrives as light, never as a repainted surface, so nothing fights the
+   broadcast blue. Both panels are forced to equal height (h-full down the
+   chain) — "Apple Podcasts" wraps to two lines and "Spotify" doesn't, which
+   otherwise left one panel visibly shorter than the other. */
+function ListenPanel({ p }: { p: Platform }) {
+  return (
+    <a
+      href={p.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Listen to Frankly Speaking on ${p.label}`}
+      className="listen-panel group relative flex h-full min-h-[210px] flex-col justify-between overflow-hidden rounded-2xl border border-line bg-ink-soft/60 px-8 py-9"
+      style={{ ['--hue' as string]: p.hue }}
+    >
+      {/* colour rises from the floor of the panel on hover */}
+      <span aria-hidden className="listen-panel-wash" />
+      {/* oversized mark bleeding off the corner */}
+      <span aria-hidden className="listen-panel-mark">
+        <PlatformIcon id={p.id} className="w-44 h-44" />
+      </span>
+
+      <span className="relative kicker text-slate transition-colors duration-300 group-hover:text-bone/80">
+        {p.cta}
+      </span>
+      {/* reserved height keeps the two panels' baselines aligned even though
+          one title wraps to two lines and the other doesn't */}
+      <span className="relative block">
+        <span className="flex min-h-[2.2em] items-end font-display text-2xl md:text-3xl tracking-tight leading-tight">
+          {p.label}
+        </span>
+        <span className="mt-2 inline-flex items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.18em] text-slate transition-colors duration-300 group-hover:text-bone">
+          Open
+          <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">
+            →
+          </span>
+        </span>
+      </span>
+    </a>
+  )
+}
+
+function ListenOn({ className = '' }: { className?: string }) {
+  const live = PODCAST.platforms.filter((p) => p.href)
+  return (
+    <div className={`grid sm:grid-cols-2 gap-4 items-stretch ${className}`}>
+      {live.map((p, i) => (
+        <motion.div
+          key={p.id}
+          data-motion-safe
+          className="h-full"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-40px' }}
+          transition={{ duration: 0.7, ease: SHOW_EASE, delay: i * 0.08 }}
+        >
+          <ListenPanel p={p} />
+        </motion.div>
+      ))}
+    </div>
+  )
+}
+
+/* The heading Alvar asked for: one clear "Listen now on" line that owns the
+   call to action, with the platforms reading as its options underneath. */
+function ListenNowHeading({ className = '' }: { className?: string }) {
+  return (
+    <div className={`flex items-center gap-4 ${className}`} data-motion-safe>
+      <h3 className="font-display text-xl md:text-2xl tracking-tight whitespace-nowrap">
+        Listen now on
+      </h3>
+      <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-line to-transparent" />
+    </div>
+  )
+}
+
+/* Drag / wheel / keyboard stepping through the episode carousel.
+
+   The wheel is handled with a NATIVE non-passive listener rather than React's
+   onWheel so it can call preventDefault() — React attaches wheel passively and
+   a passive handler cannot cancel the page scroll. The host element also carries
+   `data-lenis-prevent-wheel`, without which Lenis (which owns wheel input for
+   the whole site) would keep scrolling the page underneath us. Both are needed:
+   the attribute stops Lenis, preventDefault stops native scrolling.
+
+   Because the listener lives ON the carousel, the capture is automatically
+   scoped to hover — move the cursor off and the wheel goes back to the page. */
+function useEpisodeStepper(count: number, pxPerStep: number) {
+  const [index, setIndex] = useState(0)
+  const [drag, setDrag] = useState(0) // live pixels, 0 unless dragging
+  const host = useRef<HTMLDivElement>(null)
+  const dragging = useRef(false)
+  const startX = useRef(0)
+  const startIndex = useRef(0)
+
+  const step = (delta: number) =>
+    setIndex((i) => Math.max(0, Math.min(count - 1, i + delta)))
+  const jump = (i: number) => setIndex(Math.max(0, Math.min(count - 1, i)))
+
+  useEffect(() => {
+    const el = host.current
+    if (!el) return
+    let acc = 0
+    let idle: number | undefined
+
+    const onWheel = (e: WheelEvent) => {
+      // The cursor is over the carousel, so the wheel belongs to it, not the page.
+      e.preventDefault()
+      // Trackpads emit many small deltas — accumulate and step once per threshold.
+      acc += Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY
+      if (Math.abs(acc) >= pxPerStep) {
+        // Resolve the direction NOW. A state updater runs later, so if it read
+        // `acc` itself it would see the reset value below and always step back.
+        const dir = acc > 0 ? 1 : -1
+        acc = 0
+        setIndex((i) => Math.max(0, Math.min(count - 1, i + dir)))
+      }
+      window.clearTimeout(idle)
+      idle = window.setTimeout(() => (acc = 0), 180)
+    }
+
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      el.removeEventListener('wheel', onWheel)
+      window.clearTimeout(idle)
+    }
+  }, [count, pxPerStep])
+
+  const bind = {
+    onPointerDown: (e: React.PointerEvent) => {
+      // Ignore secondary buttons so right-click doesn't start a drag.
+      if (e.button !== 0) return
+      e.currentTarget.setPointerCapture(e.pointerId)
+      dragging.current = true
+      startX.current = e.clientX
+      startIndex.current = index
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      if (dragging.current) setDrag(e.clientX - startX.current)
+    },
+    onPointerUp: (e: React.PointerEvent) => {
+      if (!dragging.current) return
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+      dragging.current = false
+      jump(startIndex.current - Math.round((e.clientX - startX.current) / pxPerStep))
+      setDrag(0)
+    },
+    onPointerCancel: (e: React.PointerEvent) => {
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId)
+      dragging.current = false
+      setDrag(0)
+    },
+    onKeyDown: (e: React.KeyboardEvent) => {
+      if (e.key === 'ArrowRight') { e.preventDefault(); step(1) }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); step(-1) }
+      if (e.key === 'Home') { e.preventDefault(); jump(0) }
+      if (e.key === 'End') { e.preventDefault(); jump(count - 1) }
+    },
+  }
+
+  return { index, jump, drag, host, bind }
+}
+
+/* THE ARCHIVE — a cover-flow rack of every episode.
+   Browsing here is separate from playback: spin to whichever cover you want,
+   read it, then commit with the play button. The episode currently loaded in
+   the player keeps a marker so you never lose it while browsing. */
+function EpisodeCoverFlow({
+  episodes,
+  currentId,
+  playing,
+  started,
+  onPlay,
+}: {
+  episodes: Episode[]
+  currentId: string | null
+  playing: boolean
+  /* true once this episode actually has elapsed time — distinguishes
+     "Resume" from a fresh, never-played episode. */
+  started: boolean
+  onPlay: (ep: Episode) => void
+}) {
+  const { index, jump, drag, host, bind } = useEpisodeStepper(episodes.length, 90)
+  // Store which episode's notes are open rather than a bare boolean: moving to
+  // another cover then closes them implicitly, with no effect + setState dance.
+  const [openNotesId, setOpenNotesId] = useState<string | null>(null)
+  const reduced = useReducedMotion()
+
+  const live = index - drag / 90 // fractional index while a drag is in flight
+  const browsed = episodes[index]
+  const isLoaded = browsed.id === currentId
+  const notesOpen = openNotesId === browsed.id
+
+  const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'
+
+  return (
+    <div>
+      <div
+        ref={host}
+        role="listbox"
+        aria-label="Browse episodes"
+        aria-activedescendant={`cf-${browsed.id}`}
+        tabIndex={0}
+        // `touch-pan-y` (not touch-none): a horizontal swipe drives the rack,
+        // a vertical swipe still scrolls the page — no scroll trap on phones.
+        data-lenis-prevent-wheel
+        {...bind}
+        className="relative h-[320px] md:h-[430px] touch-pan-y select-none cursor-grab active:cursor-grabbing outline-none focus-visible:ring-1 focus-visible:ring-blue-bright/60 rounded-2xl"
+        style={{ perspective: '1400px', perspectiveOrigin: '50% 42%' }}
+      >
+        <div className="absolute inset-0" style={{ transformStyle: 'preserve-3d' }}>
+          {episodes.map((ep, i) => {
+            const d = i - live
+            const ad = Math.abs(d)
+            if (ad > 4.5) return null
+            const sign = d === 0 ? 0 : d > 0 ? 1 : -1
+            const x = sign * Math.min(ad, 4) * 118 + d * 26
+            const z = -Math.min(ad, 4) * 130
+            const rotY = -sign * Math.min(ad, 1) * 52
+            const isFront = ad < 0.5
+            const isPlayingCard = ep.id === currentId && playing
+            return (
+              <button
+                key={ep.id}
+                id={`cf-${ep.id}`}
+                type="button"
+                role="option"
+                aria-selected={isFront}
+                aria-label={isFront ? `Play ${ep.title}` : `Bring ${ep.title} to the front`}
+                onClick={() => (isFront ? onPlay(ep) : jump(i))}
+                className="absolute left-1/2 top-1/2 w-[200px] md:w-[250px] will-change-transform"
+                style={{
+                  transform: `translate(-50%,-50%) translateX(${x}px) translateZ(${z}px) rotateY(${rotY}deg)`,
+                  transition: drag || reduced ? 'none' : `transform 0.65s ${EASE}, opacity 0.65s ${EASE}`,
+                  zIndex: 100 - Math.round(ad * 10),
+                  opacity: ad > 3.6 ? 0 : 1,
+                  transformStyle: 'preserve-3d',
+                }}
+              >
+                <span
+                  className="block relative aspect-square w-full overflow-hidden rounded-xl border transition-[border-color,box-shadow] duration-500"
+                  style={{
+                    borderColor: isFront ? 'rgba(59,139,255,0.55)' : 'var(--color-line)',
+                    boxShadow: isFront ? '0 26px 60px -18px rgba(31,111,229,0.6)' : '0 18px 40px -22px #000',
+                  }}
+                >
+                  <img src={ep.image} alt="" className="w-full h-full object-cover" draggable={false} loading="lazy" />
+                  {/* everything that isn't the front card recedes into the dark */}
+                  <span
+                    className="absolute inset-0 bg-ink transition-opacity duration-500"
+                    style={{ opacity: isFront ? 0 : Math.min(0.66, 0.2 + ad * 0.2) }}
+                  />
+                  {ep.num != null && (
+                    <span className="absolute top-2.5 left-2.5 font-mono text-[0.62rem] tracking-[0.15em] rounded-full bg-ink/85 backdrop-blur px-2.5 py-1 text-blue-bright">
+                      EP {String(ep.num).padStart(2, '0')}
+                    </span>
+                  )}
+                  {/* the episode sitting in the player keeps its marker while you browse */}
+                  {ep.id === currentId && (
+                    <span className="absolute top-2.5 right-2.5 grid place-items-center w-6 h-6 rounded-full bg-blue text-white">
+                      {isPlayingCard ? <EqBars playing /> : <PlayIcon className="w-3 h-3 translate-x-[1px]" />}
+                    </span>
+                  )}
+                  {/* play affordance on the front card */}
+                  {isFront && (
+                    <span className="absolute inset-0 grid place-items-center opacity-0 hover:opacity-100 transition-opacity duration-300 bg-ink/45">
+                      <span className="grid place-items-center w-14 h-14 rounded-full bg-blue text-white">
+                        {isPlayingCard ? <PauseIcon className="w-6 h-6" /> : <PlayIcon className="w-6 h-6 translate-x-[1px]" />}
+                      </span>
+                    </span>
+                  )}
+                </span>
+                {/* reflection — a short mirrored strip of the card's bottom edge */}
+                <span
+                  aria-hidden
+                  className="block relative w-full h-14 md:h-20 mt-1 overflow-hidden rounded-b-xl opacity-25"
+                  style={{
+                    maskImage: 'linear-gradient(to bottom, #000 0%, transparent 90%)',
+                    WebkitMaskImage: 'linear-gradient(to bottom, #000 0%, transparent 90%)',
+                  }}
+                >
+                  <img
+                    src={ep.image}
+                    alt=""
+                    draggable={false}
+                    loading="lazy"
+                    className="absolute top-0 left-0 w-full aspect-square object-cover"
+                    style={{ transform: 'scaleY(-1)' }}
+                  />
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ------------------------------ readout ------------------------------ */}
+      <div className="mt-4 text-center px-2">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-[0.7rem] uppercase tracking-[0.18em] text-slate [&>span]:whitespace-nowrap">
+          {browsed.num != null && <span className="text-blue-bright">EP {String(browsed.num).padStart(2, '0')}</span>}
+          {browsed.date && (
+            <>
+              <span className="opacity-40">/</span>
+              <span>{formatISODate(browsed.date)}</span>
+            </>
+          )}
+          {browsed.duration && (
+            <>
+              <span className="opacity-40">/</span>
+              <span>{formatRuntime(browsed.duration)}</span>
+            </>
+          )}
+        </div>
+
+        <h3 className="mt-3 font-display text-2xl md:text-4xl tracking-tight leading-[1.08]">
+          {browsed.title}
+        </h3>
+
+        {browsed.summary && (
+          <p className="mt-4 mx-auto max-w-2xl text-sm text-bone/55 leading-relaxed">{browsed.summary}</p>
+        )}
+
+        <AnimatePresence initial={false}>
+          {notesOpen && browsed.notes.length > 1 && (
+            <motion.div
+              key="notes"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.5, ease: SHOW_EASE }}
+              className="overflow-hidden"
+            >
+              <div className="mt-5 mx-auto max-w-2xl space-y-3 text-left text-sm text-bone/65 leading-relaxed border-l border-blue/40 pl-5">
+                {browsed.notes.slice(1).map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-4">
+          <button
+            type="button"
+            onClick={() => onPlay(browsed)}
+            className="inline-flex items-center gap-2.5 bg-blue text-white px-7 py-3.5 rounded-full font-medium hover:bg-blue-bright transition-[background-color,transform] duration-300 hover:scale-[1.04] active:scale-95"
+          >
+            {isLoaded && playing ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4 translate-x-[1px]" />}
+            {isLoaded && playing ? 'Pause' : isLoaded && started ? 'Resume' : 'Play this episode'}
+          </button>
+
+          {browsed.notes.length > 1 && (
+            <button
+              type="button"
+              onClick={() => setOpenNotesId(notesOpen ? null : browsed.id)}
+              aria-expanded={notesOpen}
+              className="inline-flex items-center gap-1.5 text-sm text-bone/60 hover:text-blue-bright transition-colors"
+            >
+              {notesOpen ? 'Hide show notes' : 'Show notes'}
+              <span aria-hidden className={`text-[0.7em] transition-transform duration-300 ${notesOpen ? 'rotate-180' : ''}`}>
+                ▾
+              </span>
+            </button>
+          )}
+        </div>
+
+        {episodes.length > 1 && (
+          <p className="mt-8 font-mono text-[0.65rem] uppercase tracking-[0.2em] text-slate/70">
+            Scroll over the rack · drag · ← → to browse
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ---------------------------- HERO ARTWORK ------------------------------
+   Two treatments, both chosen 2026-08-29:
+
+   TILT  — the cover rotates toward the pointer in real perspective. Depth comes
+           from layers at different translateZ (glow behind the plane, art, a
+           pointer-tracked sheen in front), not from extra content. Driven by CSS
+           transitions rather than a JS ticker, with an overshooting curve on the
+           way back standing in for an elastic settle.
+   ON AIR — a PLAYBACK state, so it is invisible until audio actually runs:
+           tally light, scanlines and a signal pass over the artwork, and the
+           ghost PODCAST outline breathing. Clears the moment playback stops. */
+function HeroArtwork({ ep, playing }: { ep: Episode; playing: boolean }) {
+  const host = useRef<HTMLDivElement>(null)
+  const plane = useRef<HTMLDivElement>(null)
+  const airOn = playing
+
+  useEffect(() => {
+    const el = host.current
+    const pl = plane.current
+    if (!el || !pl) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    // Driven by CSS transitions, not a GSAP/rAF tween: transitions run on the
+    // compositor and keep working when requestAnimationFrame is throttled
+    // (background tab, low-power mode, a headless preview). The return uses a
+    // slightly overshooting curve to stand in for an elastic settle.
+    const move = (e: MouseEvent) => {
+      const r = el.getBoundingClientRect()
+      const px = (e.clientX - r.left) / r.width // 0..1
+      const py = (e.clientY - r.top) / r.height
+      pl.style.transition = 'transform 0.25s cubic-bezier(0.22, 1, 0.36, 1)'
+      pl.style.transform = `rotateY(${(px - 0.5) * 18}deg) rotateX(${-(py - 0.5) * 14}deg)`
+      // the sheen tracks the pointer so the highlight reads as a real reflection
+      el.style.setProperty('--sx', `${px * 100}%`)
+      el.style.setProperty('--sy', `${py * 100}%`)
+    }
+    const leave = () => {
+      pl.style.transition = 'transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1)'
+      pl.style.transform = 'rotateY(0deg) rotateX(0deg)'
+      el.style.setProperty('--sx', '50%')
+      el.style.setProperty('--sy', '50%')
+    }
+
+    el.addEventListener('mousemove', move)
+    el.addEventListener('mouseleave', leave)
+    return () => {
+      el.removeEventListener('mousemove', move)
+      el.removeEventListener('mouseleave', leave)
+      pl.style.transition = ''
+      pl.style.transform = ''
+    }
+  }, [])
+
+  return (
+    <div
+      ref={host}
+      className="hero-art relative w-full max-w-[520px] mx-auto lg:mx-0"
+      style={{ perspective: '900px' }}
+    >
+      {/* tally — only while audio is actually running */}
+      {airOn && (
+        <div className="absolute -top-3 left-0 z-20 inline-flex items-center gap-2.5 rounded-full bg-ink/85 backdrop-blur border border-blue-bright/40 px-4 py-1.5">
+          <span className="live-dot block w-2 h-2 rounded-full bg-blue-bright" />
+          <span className="kicker text-blue-bright">On air</span>
+        </div>
+      )}
+
+      <div
+        ref={plane}
+        className="relative"
+        style={{ transformStyle: 'preserve-3d' }}
+      >
+        {/* glow sits behind the plane so it lags the tilt and reads as depth */}
+        <div
+          className={`absolute -inset-8 rounded-[3rem] bg-blue/25 blur-3xl pointer-events-none transition-opacity duration-700 ${
+            playing ? 'art-glow-live' : 'opacity-70'
+          }`}
+          style={{ transform: 'translateZ(-70px)' }}
+          aria-hidden
+        />
+
+        <div className="relative aspect-square overflow-hidden rounded-2xl border border-line bg-ink-soft">
+          <img
+            src={ep.image}
+            alt={`${ep.title} cover art`}
+            loading="eager"
+            className="w-full h-full object-cover"
+          />
+
+          {/* one specular sweep on arrival — every variant keeps this */}
+          <span className="art-sweep" aria-hidden />
+
+          {/* broadcast signal pass, playback-only */}
+          {airOn && (
+            <>
+              <span className="hero-scanlines" aria-hidden />
+              <span className="hero-signal-pass" aria-hidden />
+            </>
+          )}
+
+          {/* pointer-tracked sheen, tilt-only */}
+          <span className="hero-sheen" aria-hidden />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PodcastPage() {
+  const audioRef = useRef<HTMLAudioElement>(null)
+  const heroRef = useRef<HTMLDivElement>(null)
+  const reduced = useReducedMotion()
+  const featured = EPISODES[0]
+
+  const [currentId, setCurrentId] = useState<string | null>(featured?.id ?? null)
+  const [playing, setPlaying] = useState(false)
+  const [time, setTime] = useState(0)
+  const [duration, setDuration] = useState(featured?.duration ?? 0)
+  const [speed, setSpeed] = useState(1)
+  const [docked, setDocked] = useState(false)
+  // Mobile-only "Read more" fold on the About band's description.
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const current = EPISODES.find((e) => e.id === currentId) ?? featured
+
+  // Cover art drifts against the scroll — depth without stealing attention.
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
+  const artY = useTransform(scrollYProgress, [0, 1], ['0%', '14%'])
+
+  const load = (ep: Episode, autoplay = true) => {
+    const el = audioRef.current
+    if (!el) return
+    if (ep.id !== currentId) {
+      setCurrentId(ep.id)
+      setTime(0)
+      setDuration(ep.duration ?? 0)
+      el.src = ep.audio
+      el.load()
+    }
+    if (autoplay) {
+      el.playbackRate = speed
+      void el.play().catch(() => setPlaying(false))
+    }
+  }
+
+  const toggle = (ep: Episode) => {
+    const el = audioRef.current
+    if (!el) return
+    if (ep.id !== currentId) return load(ep)
+    if (el.paused) {
+      el.playbackRate = speed
+      void el.play().catch(() => setPlaying(false))
+    } else {
+      el.pause()
+    }
+  }
+
+  const seekTo = (fraction: number) => {
+    const el = audioRef.current
+    const d = el?.duration || duration
+    if (!el || !d) return
+    el.currentTime = fraction * d
+    setTime(fraction * d)
+  }
+
+  const nudge = (delta: number) => {
+    const el = audioRef.current
+    if (!el) return
+    const d = el.duration || duration || 0
+    el.currentTime = Math.min(d, Math.max(0, el.currentTime + delta))
+    setTime(el.currentTime)
+  }
+
+  const cycleSpeed = () => {
+    const next = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]
+    setSpeed(next)
+    if (audioRef.current) audioRef.current.playbackRate = next
+  }
+
+  /* The player only exists once something is playing, so this drives both the
+     conditional render and the observer below. */
+  const playerOpen = playing || time > 0
+
+  // Dock the mini-player once the archive transport leaves the viewport.
+  // NOTE the playerOpen dependency: the transport is mounted lazily, so an
+  // effect with [] deps would run while the ref is still null, attach nothing,
+  // and the mini-player would never appear.
+  const transportRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = transportRef.current
+    if (!el) return
+    const io = new IntersectionObserver(([entry]) => setDocked(!entry.isIntersecting), {
+      rootMargin: '-80px 0px 0px 0px',
+    })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [playerOpen])
+
+  const progress = duration ? time / duration : 0
+
+  /* Clicking the hero cover doesn't just start audio — it takes you to the
+     episode in THE player. Because that player is mounted lazily (it only
+     exists once something is playing), the scroll can't happen in the click
+     handler; we flag the intent and run it from an effect once the transport
+     is actually in the DOM. */
+  const wantsPlayer = useRef(false)
+  const openInPlayer = (ep: Episode) => {
+    wantsPlayer.current = true
+    // If this episode is already the loaded one and running, don't pause it —
+    // the intent here is "take me to it", not "toggle".
+    if (!(ep.id === currentId && playing)) toggle(ep)
+    else revealPlayer()
+  }
+  const revealPlayer = () => {
+    const el = transportRef.current
+    if (el) {
+      wantsPlayer.current = false
+      smoothScrollTo(el)
+    }
+  }
+  useEffect(() => {
+    if (playerOpen && wantsPlayer.current) revealPlayer()
+  }, [playerOpen])
+
+  return (
+    <main className="min-h-[calc(100svh-104px)]">
+      {/* One element for the whole page; every play button drives this. */}
+      <audio
+        ref={audioRef}
+        src={featured?.audio}
+        preload="metadata"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+        onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+        onLoadedMetadata={(e) => {
+          const d = e.currentTarget.duration
+          if (Number.isFinite(d) && d > 0) setDuration(d)
+        }}
+      />
+
+      {EPISODES.length === 0 ? (
+        <div className="mx-auto max-w-[1400px] px-6 pt-16 pb-24">
+          <PodcastTitle />
+          <div className="mt-16 rounded-2xl border border-line bg-ink-soft px-8 py-16 text-center">
+            <p className="font-display text-2xl">The first episode is on its way.</p>
+            <p className="mt-3 text-bone/60">Subscribe now and it lands the day it drops.</p>
+            <ListenNowHeading className="mt-10 max-w-lg mx-auto" />
+            <ListenOn className="mt-5 max-w-lg mx-auto" />
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* ============================ HERO PLATE ============================ */}
+          <section ref={heroRef} className="relative overflow-hidden border-b border-line">
+            {/* blue bloom behind the title block */}
+            <motion.div
+              aria-hidden
+              className="absolute -top-40 -left-32 w-[70vw] h-[70vw] max-w-[900px] max-h-[900px] pointer-events-none"
+              style={{ background: 'radial-gradient(circle at center, rgba(31,111,229,0.22), transparent 62%)' }}
+              initial={reduced ? false : { opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 1.7, ease: 'easeOut', delay: 0.4 }}
+            />
+
+            <div className="relative mx-auto max-w-[1400px] px-6 pt-16 pb-10">
+              {/* asymmetric: type owns 7 columns, the art overflows the other 5 */}
+              <div className="grid lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+                <div className="lg:col-span-7">
+                  <PodcastTitle />
+
+                  <motion.p
+                    data-motion-safe
+                    className="mt-7 max-w-lg text-bone/65 leading-relaxed"
+                    initial={reduced ? false : { opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.9, ease: SHOW_EASE, delay: 0.95 }}
+                  >
+                    The broadcast, cut down to the moments that still hold — frontline
+                    dispatches, testimony, and prophecy read against the morning&rsquo;s
+                    headlines.
+                  </motion.p>
+
+                  <HeroSubscribe className="mt-12" />
+                </div>
+
+                {/* cover art — oversized, offset, drifting on scroll */}
+                <motion.div
+                  data-motion-safe
+                  className="lg:col-span-5 2xl:-mr-16"
+                  style={reduced ? undefined : { y: artY }}
+                  initial={reduced ? false : { opacity: 0, scale: 0.92, y: 30 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ duration: 1.3, ease: SHOW_EASE, delay: 0.5 }}
+                >
+                  {/* the label runs vertically up the left edge of the cover,
+                      so the artwork keeps the full width of its column */}
+                  <div className="flex items-stretch gap-4 max-w-[560px] mx-auto lg:mx-0">
+                    {/* Scaled up to carry real weight against a ~500px cover —
+                        at 0.68rem it read as a stray tick mark. Set in the heavy
+                        lockup sans rather than mono so it belongs to the title
+                        beside it, with the date kept small underneath so the
+                        hierarchy still reads label-then-detail. */}
+                    <div className="hidden sm:flex shrink-0 flex-col items-center justify-between py-1">
+                      <span
+                        className="font-body font-bold uppercase text-blue-bright whitespace-nowrap leading-none tracking-[0.22em] text-[clamp(1rem,1.5vw,1.4rem)]"
+                        style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                      >
+                        Latest episode
+                      </span>
+                      <span aria-hidden className="my-4 w-px flex-1 bg-gradient-to-t from-transparent via-line to-transparent" />
+                      {featured.date && (
+                        <span
+                          className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-slate whitespace-nowrap"
+                          style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}
+                        >
+                          {formatISODate(featured.date)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* the card IS the play control now that the transport has
+                        moved down to the archive — clicking it starts the episode */}
+                    <button
+                      type="button"
+                      onClick={() => openInPlayer(current)}
+                      aria-label={`Play ${current.title} in the player`}
+                      className="block min-w-0 flex-1 text-left cursor-pointer"
+                    >
+                      <HeroArtwork ep={current} playing={playing} />
+                    </button>
+                  </div>
+
+                  {/* phones get it back as a normal horizontal line */}
+                  <div className="sm:hidden flex items-center gap-3 mt-4">
+                    <span className="kicker text-blue-bright">Latest episode</span>
+                    <span aria-hidden className="h-px flex-1 bg-gradient-to-r from-line to-transparent" />
+                    {featured.date && (
+                      <span className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-slate whitespace-nowrap">
+                        {formatISODate(featured.date)}
+                      </span>
+                    )}
+                  </div>
+                </motion.div>
+              </div>
+
+            </div>
+          </section>
+
+          {/* ========================== THE ARCHIVE ========================== */}
+          <section className="relative border-b border-line pt-20 pb-8">
+            <div className="mx-auto max-w-[1400px] px-6">
+              <div className="flex items-end justify-between gap-6 mb-8" data-reveal style={{ transform: 'translateY(24px)' }}>
+                <div>
+                  <span className="kicker text-blue-bright">
+                    {EPISODES.length} {EPISODES.length === 1 ? 'episode' : 'episodes'}
+                  </span>
+                  <h2 className="mt-2 font-display text-3xl md:text-5xl tracking-tight">The archive</h2>
+                </div>
+                <p className="hidden sm:block max-w-xs text-right text-sm text-bone/50 leading-relaxed">
+                  New episodes appear here as they&rsquo;re released.
+                </p>
+              </div>
+
+              <EpisodeCoverFlow
+                episodes={EPISODES}
+                currentId={current.id}
+                playing={playing}
+                started={time > 0}
+                onPlay={toggle}
+              />
+            </div>
+
+            {/* ---------------------------- THE PLAYER ----------------------------
+                Deliberately absent until you actually start something. The hero
+                is now just the show and its latest cover; the transport belongs
+                to whatever you picked out of the rack. */}
+            <AnimatePresence initial={false}>
+              {playerOpen && (
+                <motion.div
+                  key="player"
+                  data-motion-safe
+                  /* Fade + slide only, deliberately NOT an animated height.
+                     A height:auto tween inside overflow-hidden clips the
+                     transport if the animation ever stalls (throttled rAF), and
+                     an unreachable play button is a real failure, not a cosmetic
+                     one. Letting the section grow costs a layout shift below the
+                     fold and nothing else. */
+                  initial={{ opacity: 0, y: -12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.55, ease: SHOW_EASE }}
+                >
+                  <div ref={transportRef} className="mx-auto max-w-[1400px] px-6 pt-12">
+                    <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.7rem] uppercase tracking-[0.18em] text-slate [&>span]:whitespace-nowrap">
+                          <span className="inline-flex items-center gap-2 text-blue-bright">
+                            {playing && <EqBars playing />}
+                            Now playing
+                          </span>
+                          {current.num != null && (
+                            <>
+                              <span className="opacity-40">/</span>
+                              <span>EP {String(current.num).padStart(2, '0')}</span>
+                            </>
+                          )}
+                        </div>
+                        {/* Set as a console readout rather than the display
+                            serif — inside a transport it was competing with the
+                            page's own headings. */}
+                        <h3 className="mt-2 font-body font-semibold text-xl md:text-3xl tracking-[-0.01em] leading-tight text-bone">
+                          {current.title}
+                        </h3>
+                      </div>
+
+                      <div className="flex items-center gap-4 sm:gap-5">
+                        <motion.button
+                          type="button"
+                          onClick={() => toggle(current)}
+                          aria-label={playing ? 'Pause episode' : 'Play episode'}
+                          className="shrink-0 grid place-items-center w-16 h-16 rounded-full bg-blue text-white hover:bg-blue-bright transition-colors"
+                          whileHover={{ scale: 1.07 }}
+                          whileTap={{ scale: 0.94 }}
+                        >
+                          {playing ? <PauseIcon className="w-7 h-7" /> : <PlayIcon className="w-7 h-7 translate-x-[2px]" />}
+                        </motion.button>
+                        <button
+                          type="button"
+                          onClick={() => nudge(-10)}
+                          aria-label="Back 10 seconds"
+                          className="shrink-0 text-bone/55 hover:text-bone transition-colors"
+                        >
+                          <SkipIcon dir="back" secs={10} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => nudge(10)}
+                          aria-label="Forward 10 seconds"
+                          className="shrink-0 text-bone/55 hover:text-bone transition-colors"
+                        >
+                          <SkipIcon dir="fwd" secs={10} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cycleSpeed}
+                          aria-label={`Playback speed ${speed}×`}
+                          className="shrink-0 font-mono text-xs rounded-full border border-line px-3 py-1.5 text-bone/70 hover:border-blue-bright hover:text-white transition-colors"
+                        >
+                          {speed}×
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* full-bleed, same as it was under the hero */}
+                  <div className="relative pt-6 pb-2">
+                    <Waveform
+                      peaks={current.peaks ?? null}
+                      progress={progress}
+                      duration={duration}
+                      time={time}
+                      playing={playing}
+                      onSeek={seekTo}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </section>
+
+          <div className="mx-auto max-w-[1400px] px-6 pt-24 pb-24">
+            {/* ======================== ABOUT THE SHOW ======================== */}
+            <section
+              className="relative grid lg:grid-cols-12 gap-10 lg:gap-14 items-center rounded-2xl border border-line bg-gradient-to-br from-blue-deep/25 via-ink-soft to-ink p-8 sm:p-12 overflow-hidden"
+              data-reveal
+              style={{ transform: 'translateY(28px)' }}
+            >
+              <div className="lg:col-span-7">
+                <span className="kicker text-blue-bright">About the podcast</span>
+                <h2 className="mt-4 font-display text-3xl md:text-5xl leading-[1.06] tracking-tight">
+                  Everywhere you already listen.
+                </h2>
+                {/* On phones the full description is a wall of text, so only the
+                    first paragraph shows with the rest behind "Read more". The
+                    content is identical — nothing is cut, only folded. Desktop
+                    still gets all three paragraphs with no control. */}
+                <div className="mt-6 space-y-4 max-w-xl text-sm sm:text-base text-bone/65 leading-relaxed">
+                  <p>{SHOW.paragraphs[0]}</p>
+                  <div className={`space-y-4 sm:block ${aboutOpen ? '' : 'hidden'}`}>
+                    {SHOW.paragraphs.slice(1, 3).map((p, i) => (
+                      <p key={i}>{p}</p>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAboutOpen((o) => !o)}
+                    aria-expanded={aboutOpen}
+                    className="sm:hidden inline-flex items-center gap-1.5 text-sm text-blue-bright"
+                  >
+                    {aboutOpen ? 'Read less' : 'Read more'}
+                    <span aria-hidden className={`text-[0.7em] transition-transform duration-300 ${aboutOpen ? 'rotate-180' : ''}`}>
+                      ▾
+                    </span>
+                  </button>
+                </div>
+                <ListenNowHeading className="mt-10 max-w-xl" />
+                <ListenOn className="mt-5 max-w-xl" />
+              </div>
+              <div className="lg:col-span-5">
+                <motion.div
+                  data-motion-safe
+                  className="aspect-square w-full max-w-[360px] mx-auto overflow-hidden rounded-2xl border border-line"
+                  initial={{ opacity: 0, scale: 0.94 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1, ease: SHOW_EASE }}
+                >
+                  <img
+                    src={SHOW.image}
+                    alt="Frankly Speaking Podcast cover art"
+                    loading="lazy"
+                    className="w-full h-full object-cover"
+                  />
+                </motion.div>
+              </div>
+            </section>
+          </div>
+        </>
+      )}
+
+      {/* --------------------------- DOCKED PLAYER --------------------------- */}
+      {/* Portalled to <body>: the page-transition transform on [data-page] would
+          otherwise make position:fixed resolve against the page box, not the
+          viewport (same trap as the mobile menu). */}
+      {EPISODES.length > 0 &&
+        createPortal(
+          <div
+            className={`fixed inset-x-0 bottom-0 z-40 border-t border-line bg-ink/95 backdrop-blur-xl transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              docked && (playing || time > 0)
+                ? 'opacity-100 translate-y-0'
+                : 'opacity-0 translate-y-full pointer-events-none'
+            }`}
+          >
+            <div className="mx-auto max-w-[1400px] px-4 sm:px-6 py-3 flex items-center gap-4">
+              <img
+                src={current.image}
+                alt=""
+                className="hidden sm:block w-11 h-11 rounded-lg object-cover border border-line"
+              />
+              <button
+                type="button"
+                onClick={() => toggle(current)}
+                aria-label={playing ? 'Pause episode' : 'Play episode'}
+                className="shrink-0 grid place-items-center w-10 h-10 rounded-full bg-blue text-white hover:bg-blue-bright transition-colors"
+              >
+                {playing ? <PauseIcon className="w-4 h-4" /> : <PlayIcon className="w-4 h-4 translate-x-[1px]" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => nudge(-10)}
+                aria-label="Back 10 seconds"
+                className="hidden sm:block shrink-0 text-bone/55 hover:text-bone transition-colors"
+              >
+                <SkipIcon dir="back" secs={10} />
+              </button>
+              <div className="flex-1 min-w-0">
+                <p className="truncate text-sm text-bone/85">{current.title}</p>
+                <MiniRail progress={progress} onSeek={seekTo} />
+              </div>
+              <span className="hidden sm:block shrink-0 font-mono text-[0.7rem] text-slate tabular-nums">
+                {formatClock(time)} / {formatClock(duration)}
+              </span>
+              <button
+                type="button"
+                onClick={cycleSpeed}
+                aria-label={`Playback speed ${speed}×`}
+                className="shrink-0 font-mono text-[0.7rem] rounded-full border border-line px-2.5 py-1 text-bone/70 hover:border-blue-bright hover:text-white transition-colors"
+              >
+                {speed}×
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
+    </main>
+  )
+}
+
 function Masthead({ route }: { route: string }) {
   const isActive = (href: string) => route.startsWith(href)
+  /* The podcast page is an archive, not a live broadcast, and on a phone the
+     masthead + BREAKING ticker + hero all stack into the first 200px. There
+     only, the ticker is dropped and the bar is given more height so the logo,
+     Watch and menu sit lower with air around them. Desktop and every other
+     page are untouched. */
+  const quietTop = route.startsWith('#/podcast') || route.startsWith('#/listen')
   const [menuOpen, setMenuOpen] = useState(false)
 
   // Close the mobile menu whenever the route changes
@@ -2430,7 +3970,11 @@ function Masthead({ route }: { route: string }) {
   return (
     <>
     <header className="sticky top-0 z-50 bg-ink/85 backdrop-blur border-b border-line">
-      <div className="mx-auto max-w-[1400px] px-6 h-16 flex items-center justify-between gap-6">
+      <div
+        className={`mx-auto max-w-[1400px] px-6 flex items-center justify-between gap-6 ${
+          quietTop ? 'h-24 pt-5 md:h-16 md:pt-0' : 'h-16'
+        }`}
+      >
         <a href="#" className="flex items-baseline gap-3">
           <span className="font-display text-xl tracking-tight leading-none">
             Frankly Speaking
@@ -2493,7 +4037,11 @@ function Masthead({ route }: { route: string }) {
         </div>
       </div>
 
-      <div className="marquee-wrap bg-gradient-to-r from-blue-deep via-blue to-blue-deep text-white overflow-hidden border-t border-blue-bright/40">
+      <div
+        className={`marquee-wrap bg-gradient-to-r from-blue-deep via-blue to-blue-deep text-white overflow-hidden border-t border-blue-bright/40 ${
+          quietTop ? 'hidden md:block' : ''
+        }`}
+      >
         <div className="flex items-center">
           <span className="shrink-0 bg-ink text-white kicker px-4 py-2">● Breaking</span>
           <div className="overflow-hidden py-2">
@@ -2513,7 +4061,7 @@ function Masthead({ route }: { route: string }) {
     {/* MOBILE MENU PANEL — sibling of <header> so position:fixed resolves to the
         viewport (a backdrop-filter ancestor would otherwise clip it) */}
     <div
-      className={`md:hidden fixed inset-x-0 top-16 bottom-0 z-40 bg-ink/98 backdrop-blur-xl transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${menuOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-3 pointer-events-none'}`}
+      className={`md:hidden fixed inset-x-0 bottom-0 z-40 bg-ink/98 backdrop-blur-xl transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${quietTop ? 'top-24' : 'top-16'} ${menuOpen ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 -translate-y-3 pointer-events-none'}`}
     >
       <nav className="flex flex-col px-6 pt-6 pb-10">
         {NAV.map((n) => (
@@ -2620,6 +4168,7 @@ export default function App() {
     | 'home'
     | 'dispatches'
     | 'series'
+    | 'podcast'
     | 'beyond'
     | 'partner'
     | 'donate'
@@ -2629,6 +4178,8 @@ export default function App() {
   if (watchId) page = 'watch'
   else if (route.startsWith('#/episodes') || route.startsWith('#/dispatches')) page = 'dispatches'
   else if (route.startsWith('#/series')) page = 'series'
+  // "#/listen" kept as an alias — it is the natural thing people type
+  else if (route.startsWith('#/podcast') || route.startsWith('#/listen')) page = 'podcast'
   // "#/beyond" and "#/forum" kept as aliases so old links keep working
   else if (
     route.startsWith('#/be-on-the-show') ||
@@ -2651,6 +4202,7 @@ export default function App() {
   useEffect(() => {
     const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.9 })
     lenisRef.current = lenis
+    lenisInstance = lenis
     lenis.on('scroll', ScrollTrigger.update)
     const raf = (time: number) => lenis.raf(time * 1000)
     gsap.ticker.add(raf)
@@ -2659,6 +4211,7 @@ export default function App() {
       gsap.ticker.remove(raf)
       lenis.destroy()
       lenisRef.current = null
+      lenisInstance = null
     }
   }, [])
 
@@ -2766,8 +4319,32 @@ export default function App() {
       ScrollTrigger.refresh()
     }, 1300)
 
+    // motion/react elements stall at `initial` when rAF is throttled (background
+    // tab, low-power mode, a headless preview), which would leave the hero
+    // invisible. This is a LAST-RESORT net, so it is deliberately:
+    //   · late (2600ms) — the hero cascade finishes near 2.1s, and firing during
+    //     it would visibly snap the animation short;
+    //   · viewport-only — forcing below-the-fold elements would permanently kill
+    //     their whileInView scroll reveals on a perfectly healthy page.
+    const motionSafety = window.setTimeout(() => {
+      const vh = window.innerHeight
+      const onScreen = (el: HTMLElement) => {
+        const r = el.getBoundingClientRect()
+        return r.top < vh && r.bottom > 0
+      }
+      document.querySelectorAll<HTMLElement>('[data-motion-safe]').forEach((el) => {
+        if (onScreen(el) && getComputedStyle(el).opacity === '0') el.style.opacity = '1'
+      })
+      document.querySelectorAll<HTMLElement>('[data-motion-unmask]').forEach((el) => {
+        if (!onScreen(el)) return
+        el.style.opacity = '1'
+        el.style.transform = 'none'
+      })
+    }, 2600)
+
     return () => {
       clearTimeout(safety)
+      clearTimeout(motionSafety)
       ctx.revert()
     }
   }, [route])
@@ -2783,6 +4360,8 @@ export default function App() {
           <DispatchesPage />
         ) : page === 'series' ? (
           <SeriesPage />
+        ) : page === 'podcast' ? (
+          <PodcastPage />
         ) : page === 'beyond' ? (
           <BeyondPage />
         ) : page === 'partner' ? (

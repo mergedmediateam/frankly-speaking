@@ -1,9 +1,10 @@
 name: Update playlist
 
-# Daily auto-refresh of the Frankly Speaking dispatches.
-# Refreshes src/data/videos.json from the Frankly Speaking YouTube playlist.
-# Runs daily; commits only when something changed; the push triggers Vercel's
-# auto-deploy (the repo is connected to the Vercel project).
+# Auto-refresh of the Frankly Speaking feeds.
+#   src/data/videos.json  <- the YouTube broadcast playlist (yt-dlp)
+#   src/data/podcast.json <- the Buzzsprout podcast RSS feed
+# Commits only when something changed; the push triggers Vercel's auto-deploy
+# (the repo is connected to the Vercel project).
 
 on:
   schedule:
@@ -32,18 +33,31 @@ jobs:
       - name: Install yt-dlp
         run: python3 -m pip install --upgrade --break-system-packages yt-dlp
 
+      # Used by fetch-podcast.mjs to decode each new episode for its waveform.
+      # Peaks are cached in podcast.json, so this only costs anything when an
+      # episode is genuinely new. Without it the script still runs and simply
+      # ships peaks: null, and the player falls back to a plain progress bar.
+      - name: Install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
       - name: Fetch playlist
         run: node scripts/fetch-playlist.mjs
 
-      - name: Commit if the playlist changed
+      # Separate step so a podcast-feed hiccup can never block the playlist
+      # refresh (and vice versa) — each writes its own file.
+      - name: Fetch podcast feed
+        continue-on-error: true
+        run: node scripts/fetch-podcast.mjs
+
+      - name: Commit if either feed changed
         run: |
-          if [ -n "$(git status --porcelain src/data/videos.json)" ]; then
+          if [ -n "$(git status --porcelain src/data/videos.json src/data/podcast.json)" ]; then
             git config user.name "playlist-bot"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add src/data/videos.json
-            git commit -m "chore: refresh playlist (auto)"
+            git add src/data/videos.json src/data/podcast.json
+            git commit -m "chore: refresh playlist + podcast (auto)"
             git push
-            echo "Playlist updated and pushed."
+            echo "Feeds updated and pushed."
           else
             echo "No new episodes — nothing to do."
           fi
