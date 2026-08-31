@@ -49,7 +49,12 @@ export const DONATE = {
 // platform that hasn't finished indexing the feed yet simply doesn't show up.
 // Fill one in the moment the listing goes live — no code change needed.
 export const PODCAST = {
-  appleUrl: 'https://podcasts.apple.com/us/podcast/frankly-speaking-podcast/id6806338119',
+  // 2026-08-31: Apple listing id6806338119 was REMOVED from Apple's catalog
+  // (lookup returns 0 results — likely fallout of the unclaimed-show/2FA saga).
+  // Left EMPTY so no dead link ships; the moment the show is re-listed, paste
+  // the new URL here and in the platform entry below and Apple reappears
+  // everywhere (hero chips, About panels, per-episode links) with no other change.
+  appleUrl: '',
   // Kept for reference/tooling. Deliberately NOT surfaced in the UI — a raw RSS
   // link means nothing to this audience; the apps below are how people listen.
   feedUrl: 'https://rss.buzzsprout.com/2643016.rss',
@@ -61,7 +66,7 @@ export const PODCAST = {
       id: 'apple' as const,
       label: 'Apple Podcasts',
       cta: 'Follow the show',
-      href: 'https://podcasts.apple.com/us/podcast/frankly-speaking-podcast/id6806338119',
+      href: '', // dead listing — see appleUrl note above
       // Brand hue, used only for the hover glow — never to repaint the tile.
       hue: '168, 74, 233',
     },
