@@ -4,16 +4,58 @@
   "count": 129,
   "videos": [
     {
+      "id": "we6S5Jmr4eg",
+      "title": "Only 8% Overhead — Ethan Forhetz on How Convoy of Hope Beats Disaster | Frankly Speaking Pt 2",
+      "duration": 1652,
+      "date": 20260902
+    },
+    {
+      "id": "JpcnsAF8Yzc",
+      "title": "Pulled From the Rubble 10 Days Later — Ethan Forhetz, Convoy of Hope | Frankly Speaking Pt 1",
+      "duration": 1652,
+      "date": 20260901
+    },
+    {
+      "id": "DcuSdP3X3eA",
+      "title": "From Agnostic to Priest — Fr. Cedric Pisegna on Building God's Kingdom | Frankly Speaking",
+      "duration": 1652,
+      "date": 20260831
+    },
+    {
+      "id": "KFTWPPi3tcQ",
+      "title": "They Said Tear It Down. God Said Rebuild. — Lorilee Amedia | Frankly Speaking Pt 2",
+      "duration": 1652,
+      "date": 20260830
+    },
+    {
+      "id": "zEMBdjeZZnk",
+      "title": "Broken at 19, Rebuilt by God — Tamryn Foley | Frankly Speaking Pt 1",
+      "duration": 1652,
+      "date": 20260830
+    },
+    {
       "id": "s5DzCOzwSh0",
       "title": "A Mother, a Daughter, One Calling — Michal Russo & Lorilee Amedia | Frankly Speaking Pt 2",
       "duration": 1652,
       "date": 20260828
     },
     {
+      "id": "A-7MrcLkb2g",
+      "title": "She Ran From the Calling for 10 Years — Michal Russo & Lorilee Amedia | Frankly Speaking Pt 1",
+      "duration": 1652,
+      "date": 20260827
+    },
+    {
       "id": "cWyjjhTfzpU",
       "title": "Behind the Curtain: Frank & Lorilee Amedia on 45 Years of Marriage & Ministry | Frankly Speaking",
       "duration": 1652,
       "date": 20260825
+    },
+    {
+      "id": "YSf5RV17bYA",
+      "title": "From Abuse in South Africa to Jerusalem's Ground Zero — Tamryn Foley | Frankly Speaking Pt 2",
+      "duration": 1652,
+      "date": 20260824
     },
     {
       "id": "8AjrYBTxeUc",
@@ -44,6 +86,18 @@
       "title": "Frank Amedia's Message to Prime Minister Netanyahu | Dr. Mike Evans | Frankly Speaking Pt 2",
       "duration": 1652,
       "date": 20260814
+    },
+    {
+      "id": "0Cg5JqddsPE",
+      "title": "God Is Singing Over You — Let's Get Simple with God Pt 5 | Frankly Speaking",
+      "duration": 1652,
+      "date": 20260814
+    },
+    {
+      "id": "qeKS9Dc5MG0",
+      "title": "Seated Across From Netanyahu at Blair House — Dr. Mike Evans | Frankly Speaking",
+      "duration": 1652,
+      "date": 20260813
     },
     {
       "id": "NQoLn3rqNDs",
@@ -722,60 +776,6 @@
       "title": "Direct Hit on a Bomb Shelter: Beit Shemesh Mourns 9 | Global Dispatch",
       "duration": 3544,
       "date": 20260302
-    },
-    {
-      "id": "we6S5Jmr4eg",
-      "title": "Only 8% Overhead — Ethan Forhetz on How Convoy of Hope Beats Disaster | Frankly Speaking Pt 2",
-      "duration": 1652,
-      "date": null
-    },
-    {
-      "id": "JpcnsAF8Yzc",
-      "title": "Pulled From the Rubble 10 Days Later — Ethan Forhetz, Convoy of Hope | Frankly Speaking Pt 1",
-      "duration": 1652,
-      "date": null
-    },
-    {
-      "id": "DcuSdP3X3eA",
-      "title": "From Agnostic to Priest — Fr. Cedric Pisegna on Building God's Kingdom | Frankly Speaking",
-      "duration": 1652,
-      "date": null
-    },
-    {
-      "id": "A-7MrcLkb2g",
-      "title": "She Ran From the Calling for 10 Years — Michal Russo & Lorilee Amedia | Frankly Speaking Pt 1",
-      "duration": 1652,
-      "date": null
-    },
-    {
-      "id": "KFTWPPi3tcQ",
-      "title": "They Said Tear It Down. God Said Rebuild. — Lorilee Amedia | Frankly Speaking Pt 2",
-      "duration": 1652,
-      "date": null
-    },
-    {
-      "id": "YSf5RV17bYA",
-      "title": "From Abuse in South Africa to Jerusalem's Ground Zero — Tamryn Foley | Frankly Speaking Pt 2",
-      "duration": 1652,
-      "date": null
-    },
-    {
-      "id": "zEMBdjeZZnk",
-      "title": "Broken at 19, Rebuilt by God — Tamryn Foley | Frankly Speaking Pt 1",
-      "duration": 1652,
-      "date": null
-    },
-    {
-      "id": "qeKS9Dc5MG0",
-      "title": "Seated Across From Netanyahu at Blair House — Dr. Mike Evans | Frankly Speaking",
-      "duration": 1652,
-      "date": null
-    },
-    {
-      "id": "0Cg5JqddsPE",
-      "title": "God Is Singing Over You — Let's Get Simple with God Pt 5 | Frankly Speaking",
-      "duration": 1652,
-      "date": null
     }
   ]
 }

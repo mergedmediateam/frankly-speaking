@@ -76,6 +76,20 @@ const entries = (data.entries || []).filter(
   (e) => e && e.id && e.title && e.title !== '[Private video]' && e.title !== '[Deleted video]'
 )
 
+// Ids that existed in the previous videos.json — used to tell genuinely NEW
+// videos apart from old ones that merely never got a date resolved.
+const previouslySeen = new Set()
+try {
+  const prev = JSON.parse(readFileSync(outFile, 'utf8'))
+  for (const v of prev.videos || []) if (v.id) previouslySeen.add(v.id)
+} catch {
+  /* first run */
+}
+
+// Today as YYYYMMDD, for the first-seen fallback below.
+const now = new Date()
+const todayNum = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate()
+
 let fetched = 0
 const resolved = entries.map((e, i) => {
   let date = titleDate(e.title) ?? cachedDate.get(e.id) ?? null
@@ -83,6 +97,17 @@ const resolved = entries.map((e, i) => {
     fetched++
     date = fetchUploadDate(e.id)
     if (date) console.log(`  ↳ fetched date ${date} for ${e.title.slice(0, 60)}`)
+  }
+  // FIRST-SEEN FALLBACK: on GitHub's runners YouTube often bot-blocks the
+  // per-video metadata call, and an undated video sinks to the BOTTOM of the
+  // site (this buried two brand-new episodes for days). A genuinely new video
+  // appears here within hours of upload, so its first-seen date is the upload
+  // date to within a day — good enough to sort by, and cached forever after.
+  // Old videos that were already undated are left null (their true date is
+  // unknowable this way; backfill those with a local run where yt-dlp works).
+  if (date == null && !previouslySeen.has(e.id)) {
+    date = todayNum
+    console.log(`  ↳ stamped first-seen date ${date} for NEW video ${e.title.slice(0, 60)}`)
   }
   return { e, i, date }
 })
