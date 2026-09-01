@@ -150,6 +150,7 @@ function SocialTile({ s }: { s: (typeof SOCIALS)[number] }) {
 }
 
 const TICKER = [
+  'JUST LAUNCHED — the Frankly Speaking Podcast · listen on Apple Podcasts & Spotify',
   'GLOBAL DISPATCH — Israel & Iran: the prophetic timeline, decoded',
   'NEW EPISODE — The Case For Israel, Pt. 3',
   'BE ON THE SHOW — meet the guests, then take your seat at the desk',
@@ -496,6 +497,47 @@ function Home() {
           </div>
         </div>
       </section>
+
+      {/* PODCAST LAUNCH BULLETIN — news-flash strip pinned under the hero.
+          Deliberately ONE slim clickable band, not a second hero: the full
+          podcast teaser lives further down the page; this is the "it just
+          happened" announcement that points at it. */}
+      <a
+        href="#/podcast"
+        className="podcast-bulletin group relative block border-t border-blue-bright/30 bg-gradient-to-r from-ink-soft via-[#0f1a30] to-ink-soft overflow-hidden"
+        data-reveal
+        style={{ transform: 'translateY(18px)' }}
+      >
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-blue-bright to-blue"
+        />
+        <div className="mx-auto max-w-[1400px] px-6 py-5 flex items-center gap-5 sm:gap-7">
+          <img
+            src={PODCAST_COVER}
+            alt=""
+            className="hidden sm:block w-14 h-14 rounded-lg object-cover border border-line shrink-0"
+          />
+          <div className="min-w-0 flex-1">
+            <span className="inline-flex items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.24em] text-blue-bright">
+              <span className="live-dot w-1.5 h-1.5 rounded-full bg-blue-bright" />
+              Just launched
+            </span>
+            <p className="mt-1 font-body font-bold uppercase tracking-[-0.01em] leading-tight text-bone text-base sm:text-xl md:text-2xl sm:truncate">
+              The Frankly Speaking <span className="text-blue-bright">Podcast</span> is here
+            </p>
+            <p className="hidden md:block mt-0.5 text-sm text-bone/55 truncate">
+              The broadcast, cut down to the moments that still hold — new episodes on every platform.
+            </p>
+          </div>
+          <span className="shrink-0 inline-flex items-center gap-2.5 bg-blue text-white text-sm font-medium rounded-full px-5 sm:px-6 py-2.5 sm:py-3 group-hover:bg-blue-bright transition-[background-color,transform] duration-300 group-hover:scale-[1.04]">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 translate-x-[1px]" aria-hidden>
+              <path d="M8 5.14v13.72a.5.5 0 0 0 .77.42l10.4-6.86a.5.5 0 0 0 0-.84L8.77 4.72a.5.5 0 0 0-.77.42Z" />
+            </svg>
+            Listen now
+          </span>
+        </div>
+      </a>
 
       {/* LATEST EPISODES (teaser carousel — motion-graphic header, same gallery) */}
       <section className="relative border-t border-line overflow-hidden">
