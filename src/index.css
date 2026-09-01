@@ -467,3 +467,26 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .podcast-breathe { animation: none; color: rgba(238, 242, 248, 0.45); }
 }
+
+/* --- Home: podcast-launch bulletin --- */
+/* A band of light crosses the strip every few seconds — the band reads as a
+   LIVE news flash, not static furniture. One pass, long rest, repeat. */
+@keyframes bulletin-sweep {
+  0%   { transform: translateX(-130%) skewX(-16deg); opacity: 0; }
+  4%   { opacity: 1; }
+  22%  { transform: translateX(240%) skewX(-16deg); opacity: 1; }
+  26%, 100% { transform: translateX(240%) skewX(-16deg); opacity: 0; }
+}
+.bulletin-sweep {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 40%;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 38%, rgba(59, 139, 255, 0.16) 50%, transparent 62%);
+  mix-blend-mode: screen;
+  animation: bulletin-sweep 8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bulletin-sweep { animation: none; opacity: 0; }
+}

@@ -498,40 +498,45 @@ function Home() {
         </div>
       </section>
 
-      {/* PODCAST LAUNCH BULLETIN — news-flash strip pinned under the hero.
-          Deliberately ONE slim clickable band, not a second hero: the full
-          podcast teaser lives further down the page; this is the "it just
-          happened" announcement that points at it. */}
+      {/* PODCAST LAUNCH BULLETIN — news-flash band pinned under the hero.
+          Scaled up on request to protagonist weight: lockup-grade headline with
+          the blue shimmer, large cover, and a periodic light sweep so the band
+          reads as LIVE news. Still one clickable strip, not a second hero —
+          the full podcast teaser further down does the big sell. */}
       <a
         href="#/podcast"
-        className="podcast-bulletin group relative block border-t border-blue-bright/30 bg-gradient-to-r from-ink-soft via-[#0f1a30] to-ink-soft overflow-hidden"
+        className="podcast-bulletin group relative block border-y border-blue-bright/30 bg-gradient-to-r from-ink-soft via-[#101d38] to-ink-soft overflow-hidden"
         data-reveal
         style={{ transform: 'translateY(18px)' }}
       >
+        {/* blue edge-bar + ambient glow + periodic light sweep */}
+        <span aria-hidden className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-blue-bright to-blue" />
         <span
           aria-hidden
-          className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-blue-bright to-blue"
+          className="absolute -top-24 left-1/4 w-[540px] h-[220px] rounded-full bg-blue/20 blur-3xl pointer-events-none"
         />
-        <div className="mx-auto max-w-[1400px] px-6 py-5 flex items-center gap-5 sm:gap-7">
+        <span aria-hidden className="bulletin-sweep" />
+
+        <div className="relative mx-auto max-w-[1400px] px-6 py-7 md:py-9 flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-8">
           <img
             src={PODCAST_COVER}
             alt=""
-            className="hidden sm:block w-14 h-14 rounded-lg object-cover border border-line shrink-0"
+            className="hidden sm:block w-20 h-20 md:w-24 md:h-24 rounded-xl object-cover border border-blue-bright/30 shadow-[0_0_30px_-8px_rgba(59,139,255,0.5)] shrink-0"
           />
           <div className="min-w-0 flex-1">
-            <span className="inline-flex items-center gap-2 font-mono text-[0.65rem] uppercase tracking-[0.24em] text-blue-bright">
-              <span className="live-dot w-1.5 h-1.5 rounded-full bg-blue-bright" />
+            <span className="inline-flex items-center gap-2.5 font-body font-bold uppercase tracking-[0.2em] text-blue-bright text-[0.8rem] sm:text-sm">
+              <span className="live-dot w-2 h-2 rounded-full bg-blue-bright" />
               Just launched
             </span>
-            <p className="mt-1 font-body font-bold uppercase tracking-[-0.01em] leading-tight text-bone text-base sm:text-xl md:text-2xl sm:truncate">
-              The Frankly Speaking <span className="text-blue-bright">Podcast</span> is here
+            <p className="mt-1.5 font-body font-black uppercase tracking-[-0.015em] leading-[0.95] text-bone text-2xl sm:text-3xl md:text-[2.6rem]">
+              The Frankly Speaking <span className="title-shimmer-blue">Podcast</span> is here
             </p>
-            <p className="hidden md:block mt-0.5 text-sm text-bone/55 truncate">
+            <p className="hidden md:block mt-2 text-[0.95rem] text-bone/60 truncate">
               The broadcast, cut down to the moments that still hold — new episodes on every platform.
             </p>
           </div>
-          <span className="shrink-0 inline-flex items-center gap-2.5 bg-blue text-white text-sm font-medium rounded-full px-5 sm:px-6 py-2.5 sm:py-3 group-hover:bg-blue-bright transition-[background-color,transform] duration-300 group-hover:scale-[1.04]">
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 translate-x-[1px]" aria-hidden>
+          <span className="shrink-0 inline-flex items-center gap-3 bg-blue text-white text-sm sm:text-base font-medium rounded-full px-6 sm:px-8 py-3 sm:py-4 shadow-[0_0_34px_-8px_rgba(59,139,255,0.7)] group-hover:bg-blue-bright transition-[background-color,transform] duration-300 group-hover:scale-[1.05]">
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 translate-x-[1px]" aria-hidden>
               <path d="M8 5.14v13.72a.5.5 0 0 0 .77.42l10.4-6.86a.5.5 0 0 0 0-.84L8.77 4.72a.5.5 0 0 0-.77.42Z" />
             </svg>
             Listen now
