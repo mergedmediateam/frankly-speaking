@@ -2076,10 +2076,8 @@ function DonatePage() {
               <span className="italic">on the air.</span>
             </h1>
             <p className="mt-8 max-w-md text-bone/65 leading-relaxed">
-              Frankly Speaking is viewer-funded. Every dispatch — the studio, the
-              crew, the research behind each broadcast — is carried by people who
-              believe this word needs to keep going out. Your gift is what puts it
-              on air tomorrow.
+              Some words have to keep going out. Every gift stands behind this
+              message — and carries it to the next person who needs to hear it.
             </p>
             <p className="mt-8 font-mono text-xs text-slate">
               TOUCH HEAVEN STUDIOS · CANFIELD, OHIO
