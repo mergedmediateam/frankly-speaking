@@ -132,7 +132,7 @@ Square  payment.created / payment.updated (COMPLETED)
 ## Current state (2026-09-09): LIVE
 
 - Resend: account `mergedmediateam@gmail.com`, domain `franklyspeakingshow.com` **Verified**
-  (DKIM TXT `resend._domainkey`, MX + SPF TXT on `send` — added at GoDaddy; root MX for
+  (DKIM TXT `resend._domainkey`, MX + SPF TXT on `send`, DMARC TXT `_dmarc` p=none — added at GoDaddy; root MX for
   Microsoft 365 untouched). API key `frankly-thank-you` (sending only).
 - Vercel env (production): `RESEND_API_KEY`, `SQUARE_WEBHOOK_SIGNATURE_KEY`,
   `DONATION_NOTIFY_EMAIL=mergedmediateam@gmail.com`. Sender = default `hello@franklyspeakingshow.com`.
