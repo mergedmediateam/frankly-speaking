@@ -129,7 +129,22 @@ Square  payment.created / payment.updated (COMPLETED)
 - Anything else on this Square account (other sales, refunds) is ignored.
 - Copy lives in `thankYouCopy()` in the file — edit there.
 
-## Setup (three steps, ~15 min)
+## Current state (2026-09-09): LIVE
+
+- Resend: account `mergedmediateam@gmail.com`, domain `franklyspeakingshow.com` **Verified**
+  (DKIM TXT `resend._domainkey`, MX + SPF TXT on `send` — added at GoDaddy; root MX for
+  Microsoft 365 untouched). API key `frankly-thank-you` (sending only).
+- Vercel env (production): `RESEND_API_KEY`, `SQUARE_WEBHOOK_SIGNATURE_KEY`,
+  `DONATION_NOTIFY_EMAIL=mergedmediateam@gmail.com`. Sender = default `hello@franklyspeakingshow.com`.
+- Square: subscription **Frankly thank-you** (`wbhk_34cdb29375b04f6a9f109895e9c8bc32`,
+  Production, API version 2026-07-15, events payment.created + payment.updated) on the
+  Mars Media LLC app "Frankly speaking".
+- Verified: signed test POST → `200 {"ok":true,"sent":true}`; both emails **Delivered** in
+  Resend. Unsigned POST → 401. Non-Frankly payment → ignored.
+- Still to do: one real $1 gift on the live site (then refund) to confirm Square's real
+  payload carries the note/email as expected.
+
+## Setup (three steps, ~15 min) — done, kept for reference
 
 The sender is send-only: the email never invites a reply, it points questions
 to the website / video comments instead. No mailbox has to exist behind it.
