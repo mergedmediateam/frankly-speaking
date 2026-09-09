@@ -101,3 +101,82 @@ In production, testing means a real charge — refund it from the Square dashboa
 - Tiers shown on the page live in `DONATE` in `src/config.ts`.
 - `DONATE.receiptNote` is the line under the form — update it once the client
   confirms the receiving entity and tax-deductibility wording.
+
+---
+
+# Thank-you email after a gift (`api/square-webhook.ts`)
+
+Added 2026-09-09. **Listen-only.** Square calls this URL after every payment;
+the function sends a thank-you from the Frankly Speaking team to the giver. It never
+touches the checkout, `api/donate.ts`, or any payment — if it is down or
+misconfigured, donations keep working exactly as before.
+
+```
+Square  payment.created / payment.updated (COMPLETED)
+  └─ POST https://franklyspeakingshow.com/api/square-webhook
+       ├─ verify Square HMAC signature (raw body)
+       ├─ Frankly gift?  payment.note == "Frankly Speaking gift" /
+       │                 "Frankly Speaking monthly gift" (set by api/donate.ts),
+       │                 else order.metadata.channel == "donation"
+       ├─ Resend → giver   (one-time or monthly version, team voice, send-only)
+       └─ Resend → DONATION_NOTIFY_EMAIL (optional "New gift: $50 from …" log)
+```
+
+- Idempotent per Square payment id (Resend `Idempotency-Key`), so Square's
+  retries / the created+updated pair never send two emails.
+- Monthly givers are thanked **once**, on the checkout charge. Renewal charges
+  come from Square subscription invoices without our note, so they're skipped.
+- Anything else on this Square account (other sales, refunds) is ignored.
+- Copy lives in `thankYouCopy()` in the file — edit there.
+
+## Setup (three steps, ~15 min)
+
+The sender is send-only: the email never invites a reply, it points questions
+to the website / video comments instead. No mailbox has to exist behind it.
+
+### 1. Resend — the sender
+1. <https://resend.com> → sign up (free tier: 3,000 emails/month, plenty).
+2. **Domains → Add** `franklyspeakingshow.com`. Resend shows 3 DNS records
+   (a DKIM TXT, plus MX + TXT on `send.franklyspeakingshow.com`). Add them at
+   **GoDaddy** (that's where the domain's DNS lives — `ns0x.domaincontrol.com`).
+   They don't touch the existing Microsoft 365 mail on the root domain.
+3. **API Keys → Create** (sending access only) → copy `re_…`.
+
+### 2. Vercel env vars (project `frankly-speaking`)
+```bash
+vercel env add RESEND_API_KEY production
+vercel env add SQUARE_WEBHOOK_SIGNATURE_KEY production   # from step 3
+vercel env add DONATION_NOTIFY_EMAIL production          # optional: gift log inbox
+```
+| Variable | Value |
+|---|---|
+| `RESEND_API_KEY` | Resend API key |
+| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Square webhook subscription → Signature key |
+| `DONATION_NOTIFY_EMAIL` | *(optional)* Frank/Alvar gets one short email per gift = running donor log |
+| `THANKS_FROM` | *(optional)* default `Frankly Speaking <hello@franklyspeakingshow.com>` — any address on the verified domain works, the mailbox need not exist |
+| `SQUARE_WEBHOOK_URL` | *(optional)* only if the URL entered in Square differs from the default |
+
+Then redeploy (`vercel --prod --yes`) so the new function exists at the URL
+before step 3 (Square pings it when you save the subscription).
+
+### 3. Square — the webhook subscription
+Same Square account that receives the gifts (Mars Media LLC, location
+`LRYY1AE2HZW3A`).
+1. <https://developer.squareup.com/apps> → the app whose token is on Vercel →
+   **Webhooks → Subscriptions → Add subscription**.
+2. Name: `Frankly thank-you`. API version: `2025-01-23`.
+   URL: `https://franklyspeakingshow.com/api/square-webhook`.
+3. Events: tick **`payment.created`** and **`payment.updated`** only.
+4. Save → copy the **Signature key** → that's `SQUARE_WEBHOOK_SIGNATURE_KEY`
+   (step 2). Redeploy once more after adding it.
+5. In the subscription page use **Send test event** (`payment.updated`) — the
+   function should answer `200 {"ok":true,"ignored":"not a Frankly gift"}`
+   (the test payload has no Frankly note). Signature failures answer `401`.
+
+## Test for real
+Give **$1 one-time** on the live site with your own email → thank-you email
+within ~10 s, plus the notify email if set. Refund the $1 from the Square
+Dashboard (the refund event is ignored, nothing else fires). For monthly, use
+$10 → cancel the subscription in Dashboard → Customers → Subscriptions.
+
+Logs: Vercel → project → Logs, filter `square-webhook`.
