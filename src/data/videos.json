@@ -1,7 +1,7 @@
 {
   "playlistId": "PLjxZripGCNoRFIX8HQIoufzmXD7Hegavj",
   "playlistUrl": "https://www.youtube.com/playlist?list=PLjxZripGCNoRFIX8HQIoufzmXD7Hegavj",
-  "count": 134,
+  "count": 135,
   "videos": [
     {
       "id": "-c8HXMwcHbU",
@@ -9,6 +9,13 @@
       "duration": 1652,
       "date": 20260914,
       "availability": "public"
+    },
+    {
+      "id": "MlUl9V7G34Y",
+      "title": "Bishop Glenn Plummer pt 1 | Frankly Speaking | September 11",
+      "duration": 1652,
+      "date": 20260914,
+      "availability": null
     },
     {
       "id": "iEGz-kdt03k",
