@@ -12,6 +12,10 @@
 //
 // Sorting: date desc; same-day / undated keep playlist-relative order.
 //
+// Visibility: the same per-video call also reads availability, and anything
+// CONFIRMED unlisted/private is dropped — being in the playlist isn't enough,
+// yt-dlp can see videos the public channel doesn't show.
+//
 // Re-run whenever new episodes are published:  node scripts/fetch-playlist.mjs
 // Full backfill (first run):                   FETCH_CAP=500 node scripts/fetch-playlist.mjs
 import { execFileSync } from 'node:child_process'
@@ -37,29 +41,40 @@ function titleDate(title) {
   return Number(m[3]) * 10000 + mon * 100 + Number(m[2])
 }
 
-// One metadata request for a single video's upload date → YYYYMMDD or null.
-function fetchUploadDate(id) {
+// One metadata request for a single video → { date, availability }.
+// --flat-playlist never exposes availability, so this is also the only way to
+// catch a video that's in the playlist but unlisted/private on the channel
+// (yt-dlp can still see those; they just shouldn't show up on the site).
+function fetchVideoMeta(id) {
   try {
     const out = execFileSync(
       'yt-dlp',
-      ['--no-warnings', '--skip-download', '--print', '%(upload_date)s', `https://www.youtube.com/watch?v=${id}`],
+      ['--no-warnings', '--skip-download', '--print', '%(upload_date)s|%(availability)s', `https://www.youtube.com/watch?v=${id}`],
       { encoding: 'utf8', timeout: 90_000 }
     ).trim()
-    if (/^\d{8}$/.test(out)) return Number(out)
+    const [datePart, availPart] = out.split('|')
+    return {
+      date: /^\d{8}$/.test(datePart) ? Number(datePart) : null,
+      availability: availPart && availPart !== 'NA' ? availPart : null,
+    }
   } catch {
-    /* video gone / throttled — leave undated, a later run retries */
+    /* video gone / throttled — leave unresolved, a later run retries */
+    return { date: null, availability: null }
   }
-  return null
 }
 
 const outDir = fileURLToPath(new URL('../src/data/', import.meta.url))
 const outFile = outDir + 'videos.json'
 
-// Cache: dates already resolved by previous runs (so the Action never re-fetches).
+// Cache: dates + availability already resolved by previous runs (so the Action never re-fetches).
 const cachedDate = new Map()
+const cachedAvailability = new Map()
 try {
   const prev = JSON.parse(readFileSync(outFile, 'utf8'))
-  for (const v of prev.videos || []) if (v.id && v.date) cachedDate.set(v.id, v.date)
+  for (const v of prev.videos || []) {
+    if (v.id && v.date) cachedDate.set(v.id, v.date)
+    if (v.id && v.availability) cachedAvailability.set(v.id, v.availability)
+  }
 } catch {
   /* first run — no cache yet */
 }
@@ -93,10 +108,15 @@ const todayNum = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.ge
 let fetched = 0
 const resolved = entries.map((e, i) => {
   let date = titleDate(e.title) ?? cachedDate.get(e.id) ?? null
-  if (date == null && fetched < FETCH_CAP) {
+  let availability = cachedAvailability.get(e.id) ?? null
+  if ((date == null || availability == null) && fetched < FETCH_CAP) {
     fetched++
-    date = fetchUploadDate(e.id)
-    if (date) console.log(`  ↳ fetched date ${date} for ${e.title.slice(0, 60)}`)
+    const meta = fetchVideoMeta(e.id)
+    if (date == null && meta.date) {
+      date = meta.date
+      console.log(`  ↳ fetched date ${date} for ${e.title.slice(0, 60)}`)
+    }
+    if (availability == null) availability = meta.availability
   }
   // FIRST-SEEN FALLBACK: on GitHub's runners YouTube often bot-blocks the
   // per-video metadata call, and an undated video sinks to the BOTTOM of the
@@ -109,11 +129,23 @@ const resolved = entries.map((e, i) => {
     date = todayNum
     console.log(`  ↳ stamped first-seen date ${date} for NEW video ${e.title.slice(0, 60)}`)
   }
-  return { e, i, date }
+  return { e, i, date, availability }
 })
 
+// Drop videos CONFIRMED unlisted/private — yt-dlp can still see them inside
+// the playlist even though they don't appear on the public channel, which is
+// exactly how "Bishop Glenn Plummer pt 1" ended up on the site (2026-09-14).
+// Unresolved (null — same bot-blocking risk as dates above) is left visible
+// for now; a later run, local or CI, resolves it and removes it if needed.
+const hidden = resolved.filter((r) => r.availability && r.availability !== 'public')
+if (hidden.length) {
+  console.warn(`⚠ Excluding ${hidden.length} non-public video(s):`)
+  hidden.forEach((r) => console.warn(`   - [${r.availability}] ${r.e.title}`))
+}
+const visible = resolved.filter((r) => !hidden.includes(r))
+
 // Newest first; same-day or undated keep playlist-relative order (stable).
-const ordered = resolved
+const ordered = visible
   .slice()
   .sort((a, b) => {
     const ak = a.date ?? -1
@@ -121,11 +153,12 @@ const ordered = resolved
     if (ak !== bk) return bk - ak
     return a.i - b.i
   })
-  .map(({ e, date }) => ({
+  .map(({ e, date, availability }) => ({
     id: e.id,
     title: e.title.normalize('NFC'),
     duration: e.duration ? Math.round(e.duration) : null,
     date, // YYYYMMDD number, or null while still unresolved
+    availability, // 'public' | 'unlisted' | 'private' | … | null while unresolved — cached so we don't re-fetch every run
   }))
 
 const undated = ordered.filter((v) => v.date == null)
