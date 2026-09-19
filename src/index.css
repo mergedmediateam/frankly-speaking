@@ -72,44 +72,6 @@ body {
 }
 .live-dot { animation: livepulse 1.8s ease-out infinite; }
 
-/* Logo lockup on dark bg: black background drops out via screen blend */
-.logo-screen { mix-blend-mode: screen; }
-
-/* ---- Hero logo motion-graphics idle loop ---- */
-.logo-loop {
-  position: relative;
-  display: inline-block;
-  animation: logoFloat 6.5s ease-in-out infinite;
-  will-change: transform;
-}
-@keyframes logoFloat {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50%      { transform: translateY(-10px) scale(1.015); }
-}
-/* specular glint that sweeps across the metallic logo, masked to its shape */
-.logo-glint {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(
-    115deg,
-    transparent 42%,
-    rgba(255, 255, 255, 0.65) 50%,
-    transparent 58%
-  );
-  background-repeat: no-repeat;
-  background-size: 220% 100%;
-  background-position: 170% 0;
-  -webkit-mask: url('/brand/lockup.png') center / contain no-repeat;
-  mask: url('/brand/lockup.png') center / contain no-repeat;
-  mix-blend-mode: screen;
-  animation: logoGlint 6.5s ease-in-out infinite;
-}
-@keyframes logoGlint {
-  0%, 50%   { background-position: 170% 0; }
-  78%, 100% { background-position: -70% 0; }
-}
-
 /* ---- Hero background slow pan (motion-graphics loop) ---- */
 .hero-bg-anim {
   animation: heroPan 32s ease-in-out infinite alternate;
@@ -128,7 +90,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .logo-loop, .logo-glint, .hero-bg-anim, .hero-glow-drift { animation: none; }
+  .hero-bg-anim, .hero-glow-drift { animation: none; }
 }
 
 /* Reveal initial state (GSAP animates from here) */

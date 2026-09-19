@@ -419,9 +419,10 @@ function Home() {
     <>
       {/* HERO */}
       <section className="relative min-h-[calc(100svh-104px)] flex items-end justify-center overflow-hidden bg-ink">
-        {/* mobile (vertical 9:16) */}
+        {/* mobile (vertical 9:16) — lifted so the neon sign clears the intro copy; the gap it
+            leaves at the bottom sits under the ink gradient */}
         <video
-          className="md:hidden absolute inset-0 w-full h-full object-cover bg-ink"
+          className="md:hidden absolute inset-0 w-full h-full object-cover bg-ink -translate-y-[17%]"
           autoPlay
           muted
           loop
@@ -449,20 +450,11 @@ function Home() {
           className="absolute inset-0 z-[1] pointer-events-none bg-gradient-to-t from-ink via-ink/55 via-30% to-transparent to-70%"
         />
         <div data-hero-content className="relative z-10 w-full max-w-[1100px] px-6 pb-14 md:pb-20 flex flex-col items-center text-center">
-          <h1 className="font-display font-medium leading-[0.95] tracking-tight text-[clamp(2.4rem,6.5vw,5.5rem)] drop-shadow-[0_4px_30px_rgba(0,0,0,0.6)]">
-            <span className="block overflow-hidden">
-              <span data-hero-line className="block" style={{ opacity: 0, transform: 'translateY(110%)' }}>
-                I can only
-              </span>
-            </span>
-            <span className="block overflow-hidden">
-              <span data-hero-line className="block" style={{ opacity: 0, transform: 'translateY(110%)' }}>
-                be <span className="italic text-blue-bright">Frank.</span>
-              </span>
-            </span>
-          </h1>
+          {/* The neon sign in the hero video IS the title. The old visible slogan raced its GSAP
+              reveal and sometimes landed on top of the sign, so it stays for SEO / screen readers only. */}
+          <h1 className="sr-only">Frankly Speaking with Frank Amedia — I can only be Frank.</h1>
           <p
-            className="mt-6 max-w-xl text-base md:text-lg leading-relaxed text-bone/75"
+            className="mt-6 max-w-xl text-base md:text-lg leading-relaxed text-bone/75 max-md:[@media(max-height:780px)]:hidden"
             data-hero-fade
             style={{ opacity: 0, transform: 'translateY(16px)' }}
           >
@@ -4273,15 +4265,6 @@ export default function App() {
         { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }
       )
 
-      // hero headline — masked line reveal
-      gsap.to('[data-hero-line]', {
-        opacity: 1,
-        yPercent: 0,
-        duration: 1.15,
-        stagger: 0.1,
-        ease: 'expo.out',
-        delay: 0.4,
-      })
       gsap.to('[data-hero-fade]', {
         opacity: 1,
         y: 0,
@@ -4353,7 +4336,7 @@ export default function App() {
     const safety = window.setTimeout(() => {
       document
         .querySelectorAll<HTMLElement>(
-          '[data-reveal],[data-hero-line],[data-hero-fade],[data-page],[data-grid] > *'
+          '[data-reveal],[data-hero-fade],[data-page],[data-grid] > *'
         )
         .forEach((el) => {
           if (getComputedStyle(el).opacity === '0') {
