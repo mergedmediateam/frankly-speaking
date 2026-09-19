@@ -452,3 +452,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .bulletin-sweep { animation: none; opacity: 0; }
 }
+
+/* the viewfinder cursor (CursorFollower) replaces the system pointer on mouse/trackpad devices */
+html.cursor-none, html.cursor-none * { cursor: none !important; }

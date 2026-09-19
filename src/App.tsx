@@ -8,6 +8,7 @@ import type { MotionValue } from 'motion/react'
 import playlist from './data/videos.json'
 import podcast from './data/podcast.json'
 import { FORUM_FORM, PARTNER_FORM, DONATE, PODCAST } from './config'
+import CursorFollower from './CursorFollower'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -36,18 +37,11 @@ const SOCIALS = [
   {
     label: 'YouTube',
     handle: 'Frankly Speaking with Pastor Frank Amedia',
-    cta: 'Subscribe',
-    href: 'https://www.youtube.com/@TCTTVNet/featured',
+    cta: 'Watch the playlist',
+    // straight to the Frankly Speaking playlist, not the whole TCT channel
+    href: 'https://www.youtube.com/playlist?list=PLjxZripGCNoRFIX8HQIoufzmXD7Hegavj',
     // YouTube play button
     path: 'M21.58 7.19a2.5 2.5 0 0 0-1.76-1.77C18.25 5 12 5 12 5s-6.25 0-7.82.42A2.5 2.5 0 0 0 2.42 7.19 26.2 26.2 0 0 0 2 12a26.2 26.2 0 0 0 .42 4.81 2.5 2.5 0 0 0 1.76 1.77C5.75 19 12 19 12 19s6.25 0 7.82-.42a2.5 2.5 0 0 0 1.76-1.77A26.2 26.2 0 0 0 22 12a26.2 26.2 0 0 0-.42-4.81ZM10 15.13V8.87L15.25 12 10 15.13Z',
-  },
-  {
-    label: 'Facebook',
-    handle: 'Frankly Speaking',
-    cta: 'Follow',
-    href: 'https://www.facebook.com/people/Frankly-Speaking/61591621778787/',
-    // Facebook "f"
-    path: 'M13.5 21v-7.4h2.48l.37-2.88H13.5V8.88c0-.83.23-1.4 1.43-1.4h1.52V4.9c-.26-.03-1.17-.11-2.22-.11-2.2 0-3.7 1.34-3.7 3.8v2.13H8.04v2.88h2.49V21h2.97Z',
   },
   {
     label: 'Instagram',
@@ -807,7 +801,7 @@ function Home() {
               watch.
             </p>
           </div>
-          <div data-grid className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div data-grid className="mt-12 mx-auto max-w-[940px] grid grid-cols-1 sm:grid-cols-2 gap-6">
             {SOCIALS.map((s) => (
               <SocialTile key={s.label} s={s} />
             ))}
@@ -1883,7 +1877,7 @@ const GIVE_IMPACT = [
     n: '02',
     title: 'It stays free to watch',
     body:
-      'No paywall, no subscription. Every dispatch goes out on YouTube, Facebook and this site for anyone, anywhere, at no cost.',
+      'No paywall, no subscription. Every dispatch goes out on YouTube and this site for anyone, anywhere, at no cost.',
   },
   {
     n: '03',
@@ -4380,6 +4374,7 @@ export default function App() {
   return (
     <div ref={root} className="grain min-h-screen">
       <div className="scroll-progress" aria-hidden />
+      <CursorFollower />
       <Masthead route={route} />
       <div data-page key={page === 'watch' ? `w-${watchId}` : page}>
         {page === 'watch' && watchId ? (
